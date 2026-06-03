@@ -1873,27 +1873,24 @@ export class MockDatabase {
   async syncWithBackend() {
     if (typeof window === 'undefined') return;
     try {
-      // Dynamically import to avoid SSR bundling issues
-      // const { isSupabaseConfigured, supabasePullAll, supabaseSeedAll } = await import('./db');
-      // if (!isSupabaseConfigured()) {
-      //   console.log('[RTIH] Supabase not configured. Running in LocalStorage Mode.');
-      //   return;
-      // }
-      return;
+      const { isSupabaseConfigured, supabasePullAll, supabaseSeedAll } = await import('./db');
+      if (!isSupabaseConfigured()) {
+        console.log('[RTIH] Supabase not configured. Running in LocalStorage Mode.');
+        return;
+      }
 
       console.log('[RTIH] Connecting to Supabase...');
-      // const pulled = await supabasePullAll();
-      const pulled: any = {};
+      const pulled = await supabasePullAll();
 
       if (!pulled.startups || pulled.startups.length === 0) {
         // Tables are empty — seed from local mock data
         console.log('[RTIH] Supabase tables are empty. Seeding with pre-scaled mock data...');
-        // await supabaseSeedAll(this.data);
+        await supabaseSeedAll(this.data as any);
         console.log('[RTIH] ✅ Supabase seeding completed successfully!');
       } else {
         // Hydrate in-memory state from Supabase
         console.log('[RTIH] ✅ Synchronized state from live Supabase database.');
-        const keys = Object.keys(pulled) as (keyof typeof pulled)[];
+        const keys = Object.keys(pulled) as string[];
         for (const key of keys) {
           const arr = pulled[key];
           if (Array.isArray(arr) && arr.length > 0 && (this.data as any)[key]) {
@@ -1911,34 +1908,25 @@ export class MockDatabase {
   private async syncChanges(oldStr: string | null) {
     if (!oldStr) return;
     try {
-      // const { isSupabaseConfigured, supabaseUpsertEntity } = await import('./db');
-      // if (!isSupabaseConfigured()) return;
-      return; // Added to prevent offline error since db doesn't exist
+      const { isSupabaseConfigured, supabaseUpsertEntity } = await import('./db');
+      if (!isSupabaseConfigured()) return;
 
       const oldData = JSON.parse(oldStr as string);
       const collections = [
-        { key: 'startups', type: 'startup' },
-        { key: 'founders', type: 'founder' },
-        { key: 'applications', type: 'application' },
-        { key: 'tasks', type: 'task' },
-        { key: 'notifications', type: 'notification' },
-        { key: 'messages', type: 'message' },
-        { key: 'documents', type: 'document' },
-        { key: 'ideaPosts', type: 'idea' },
-        { key: 'citizenProfiles', type: 'citizen' },
-        { key: 'stageRecommendations', type: 'stage_recommendation' },
-        { key: 'jobPostings', type: 'job_posting' }
+        'startups', 'founders', 'applications', 'tasks', 'notifications',
+        'messages', 'documents', 'stageRecommendations', 'jobPostings',
+        'mentorshipGoals', 'actionItems', 'sessions', 'departments', 'programs'
       ];
 
-      for (const col of collections) {
-        const oldCol = oldData[col.key] || [];
-        const newCol = (this.data as any)[col.key] || [];
+      for (const key of collections) {
+        const oldCol: any[] = oldData[key] || [];
+        const newCol: any[] = (this.data as any)[key] || [];
 
         for (const item of newCol) {
-          const oldItem = oldCol.find((o: any) => o.id === item.id || (o.email && o.email === item.email));
+          const oldItem = oldCol.find((o: any) => o.id === item.id);
           const isModified = !oldItem || JSON.stringify(oldItem) !== JSON.stringify(item);
           if (isModified) {
-            // await supabaseUpsertEntity(col.type, item);
+            await supabaseUpsertEntity(key, item);
           }
         }
       }
