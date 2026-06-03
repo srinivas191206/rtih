@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Shield, Sparkles, User, Briefcase, Award, Network, ToggleLeft, ToggleRight, Landmark, LogOut, UserCheck, Bell } from 'lucide-react';
+import { Shield, Sparkles, User, Briefcase, Award, Network, ToggleLeft, ToggleRight, Landmark, LogOut, UserCheck, Bell, Menu, X } from 'lucide-react';
 import { getDb, isDemoModeActive, setDemoModeActive, isExecutiveModeActive, setExecutiveModeActive, getActiveUser, setActiveUser, ActiveUser } from '@/lib/mockDb';
 
 const ROLES = [
@@ -25,6 +25,7 @@ export default function Navigation() {
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [execActive, setExecActive] = useState(false);
   const [currentUser, setCurrentUser] = useState<ActiveUser | null>(null);
   const [stats, setStats] = useState({ totalStartups: 14850, totalJobs: 122400 });
@@ -201,7 +202,7 @@ export default function Navigation() {
               onClick={toggleExec}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-wider transition-all duration-200 ${
                 execActive
-                  ? 'bg-emerald-50/80 text-emerald-600 border-emerald-300'
+                  ? 'bg-emerald-55/80 text-emerald-600 border-emerald-300'
                   : 'bg-slate-50 border-slate-200 text-slate-400'
               }`}
               title="Toggle AI executive summaries for Chief Minister / Admin level briefs."
@@ -375,36 +376,78 @@ export default function Navigation() {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Link
-                  href="/register"
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-400 text-emerald-600 hover:bg-emerald-50 text-xs font-bold transition-colors"
-                >
-                  Apply to RTIH
-                </Link>
-                <Link
-                  href="/apply"
-                  className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-colors"
-                >
-                  Find Jobs
-                </Link>
-                <Link
-                  href="/alumni"
-                  className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-colors"
-                >
-                  Alumni
-                </Link>
+                <div className="hidden md:flex items-center gap-2">
+                  <Link
+                    href="/register"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-400 text-emerald-600 hover:bg-emerald-50 text-xs font-bold transition-colors"
+                  >
+                    Apply to RTIH
+                  </Link>
+                  <Link
+                    href="/apply"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-colors"
+                  >
+                    Find Jobs
+                  </Link>
+                  <Link
+                    href="/alumni"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-colors"
+                  >
+                    Alumni
+                  </Link>
+                </div>
+                
                 <Link
                   href="/login"
-                  className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-md shadow-emerald-500/10 transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-md shadow-emerald-500/10 transition-colors"
                 >
-                  <UserCheck className="w-4 h-4" />
+                  <UserCheck className="w-3.5 h-3.5" />
                   <span>Sign In</span>
                 </Link>
+
+                {/* Mobile Menu Button */}
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="md:hidden p-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:text-slate-700 hover:bg-slate-105 transition-colors cursor-pointer"
+                  title="Toggle Mobile Menu"
+                >
+                  {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                </button>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Mobile Collapsible Navigation Menu */}
+      {!currentUser && mobileMenuOpen && (
+        <div className="md:hidden border-t border-slate-100 bg-white px-4 py-3.5 space-y-2.5 animate-slide-in">
+          <Link
+            href="/register"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center justify-between px-4 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50/15 text-emerald-700 text-xs font-bold transition-colors"
+          >
+            <span>🚀 Apply to RTIH Incubation</span>
+            <span className="text-[10px]">→</span>
+          </Link>
+          <Link
+            href="/apply"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center justify-between px-4 py-2.5 rounded-lg border border-slate-150 bg-slate-50/50 text-slate-700 text-xs font-bold transition-colors"
+          >
+            <span>💼 Find Jobs at Startups</span>
+            <span className="text-[10px]">→</span>
+          </Link>
+          <Link
+            href="/alumni"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center justify-between px-4 py-2.5 rounded-lg border border-slate-150 bg-slate-50/50 text-slate-700 text-xs font-bold transition-colors"
+          >
+            <span>🎓 Alumni Network</span>
+            <span className="text-[10px]">→</span>
+          </Link>
+        </div>
+      )}
 
       {/* Global Floating Toasts Stack */}
       <div className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
