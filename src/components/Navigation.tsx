@@ -27,7 +27,7 @@ export default function Navigation() {
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const [execActive, setExecActive] = useState(false);
   const [currentUser, setCurrentUser] = useState<ActiveUser | null>(null);
-  const [stats, setStats] = useState({ totalStartups: 550, totalJobs: 13800 });
+  const [stats, setStats] = useState({ totalStartups: 14850, totalJobs: 122400 });
   
   // Notification and Toast State
   const [notifications, setNotifications] = useState<any[]>([]);

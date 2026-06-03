@@ -14,11 +14,11 @@ export default function Home() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [stats, setStats] = useState({
-    totalStartups: 550,
-    totalJobs: 13800,
-    soonicorns: 10,
-    unicorns: 3,
-    activeOutposts: 5
+    totalStartups: 14850,
+    totalJobs: 122400,
+    soonicorns: 21,
+    unicorns: 11,
+    activeOutposts: 4
   });
 
   useEffect(() => {
