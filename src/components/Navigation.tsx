@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Shield, Sparkles, User, Briefcase, Award, Network, ToggleLeft, ToggleRight, Landmark, LogOut, UserCheck } from 'lucide-react';
+import { Shield, Sparkles, User, Briefcase, Award, Network, ToggleLeft, ToggleRight, Landmark, LogOut, UserCheck, Bell } from 'lucide-react';
 import { getDb, isDemoModeActive, setDemoModeActive, isExecutiveModeActive, setExecutiveModeActive, getActiveUser, setActiveUser, ActiveUser } from '@/lib/mockDb';
 
 const ROLES = [
@@ -14,13 +14,24 @@ const ROLES = [
   { name: 'AP Admin Command Center', path: '/admin', icon: Shield, color: 'text-red-500', minRole: 'admin' }
 ];
 
+interface Toast {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const [execActive, setExecActive] = useState(false);
   const [currentUser, setCurrentUser] = useState<ActiveUser | null>(null);
   const [stats, setStats] = useState({ totalStartups: 550, totalJobs: 13800 });
+  
+  // Notification and Toast State
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
   // Sync states and listen for dynamic updates
   useEffect(() => {
@@ -39,23 +50,56 @@ export default function Navigation() {
       }
     };
 
+    const updateNotifications = () => {
+      try {
+        const user = getActiveUser();
+        if (user) {
+          const list = getDb().getNotifications(user.email);
+          setNotifications(list);
+        } else {
+          setNotifications([]);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
     updateStats();
+    updateNotifications();
 
     const handleModeChange = () => {
       setExecActive(isExecutiveModeActive());
       updateStats();
+      updateNotifications();
     };
 
     const handleUserChange = () => {
       setCurrentUser(getActiveUser());
+      updateNotifications();
+    };
+
+    const handleToastEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ message: string; type: 'success' | 'error' | 'info' }>;
+      if (!customEvent.detail) return;
+      const { message, type } = customEvent.detail;
+      const id = `${Date.now()}-${Math.random()}`;
+      
+      setToasts(prev => [...prev, { id, message, type }]);
+
+      // Auto-remove toast after 4 seconds
+      setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+      }, 4000);
     };
 
     window.addEventListener('rtih_mode_change', handleModeChange);
     window.addEventListener('rtih_user_change', handleUserChange);
+    window.addEventListener('rtih_toast', handleToastEvent);
     
     return () => {
       window.removeEventListener('rtih_mode_change', handleModeChange);
       window.removeEventListener('rtih_user_change', handleUserChange);
+      window.removeEventListener('rtih_toast', handleToastEvent);
     };
   }, [pathname]);
 
@@ -68,10 +112,34 @@ export default function Navigation() {
     router.refresh();
   };
 
-
   const handleLogout = () => {
     setActiveUser(null);
     router.push('/login');
+  };
+
+  const handleNotifClick = (notif: any) => {
+    try {
+      getDb().markNotificationRead(notif.id);
+      window.dispatchEvent(new Event('rtih_mode_change'));
+      setNotifDropdownOpen(false);
+      if (notif.linkTo) {
+        router.push(notif.linkTo);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleMarkAllRead = () => {
+    try {
+      if (currentUser) {
+        getDb().markAllNotificationsRead(currentUser.email);
+        window.dispatchEvent(new Event('rtih_mode_change'));
+      }
+      setNotifDropdownOpen(false);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   // Determine allowed roles for role-switching dropdown
@@ -85,6 +153,8 @@ export default function Navigation() {
     if (currentUser.role === 'mentor') return role.minRole === 'public' || role.minRole === 'mentor';
     return role.minRole === 'public';
   });
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
     <header className="sticky top-0 z-[1000] w-full border-b border-slate-200 bg-white/95 backdrop-blur-md">
@@ -126,13 +196,12 @@ export default function Navigation() {
           {/* Interactive Mode Controls & Role Switcher */}
           <div className="flex items-center gap-3">
 
-
             {/* Executive Mode Toggle */}
             <button
               onClick={toggleExec}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-wider transition-all duration-200 ${
                 execActive
-                  ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/35'
+                  ? 'bg-emerald-50/80 text-emerald-600 border-emerald-300'
                   : 'bg-slate-50 border-slate-200 text-slate-400'
               }`}
               title="Toggle AI executive summaries for Chief Minister / Admin level briefs."
@@ -144,11 +213,14 @@ export default function Navigation() {
 
             {/* Active User session / login indicators */}
             {currentUser ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 {/* Switcher Console (Restricted to roles) */}
                 <div className="relative">
                   <button
-                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    onClick={() => {
+                      setDropdownOpen(!dropdownOpen);
+                      setNotifDropdownOpen(false);
+                    }}
                     className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors border border-slate-200"
                   >
                     <currentRole.icon className={`w-4 h-4 ${currentRole.color}`} />
@@ -162,7 +234,7 @@ export default function Navigation() {
                         className="fixed inset-0 z-10"
                         onClick={() => setDropdownOpen(false)}
                       ></div>
-                      <div className="absolute right-0 mt-2 w-64 rounded-xl border border-slate-200 bg-white shadow-xl z-20 py-1.5 focus:outline-none">
+                      <div className="absolute right-0 mt-2 w-64 rounded-xl border border-slate-200 bg-white shadow-xl z-20 py-1.5 focus:outline-none animate-slide-in">
                         <div className="px-3 py-1.5 border-b border-slate-100 mb-1 flex items-center justify-between">
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                             Switch console
@@ -194,6 +266,88 @@ export default function Navigation() {
                             </button>
                           );
                         })}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Notification Bell Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setNotifDropdownOpen(!notifDropdownOpen);
+                      setDropdownOpen(false);
+                    }}
+                    className={`relative p-2 rounded-lg border text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors ${
+                      notifDropdownOpen ? 'bg-slate-100 border-slate-300' : 'bg-white border-slate-200'
+                    }`}
+                    title="Notifications"
+                  >
+                    <Bell className="w-4 h-4" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {notifDropdownOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setNotifDropdownOpen(false)}
+                      ></div>
+                      <div className="absolute right-0 mt-2 w-80 rounded-xl border border-slate-200 bg-white shadow-xl z-20 py-1.5 focus:outline-none animate-slide-in">
+                        <div className="px-4 py-2 border-b border-slate-100 mb-1 flex items-center justify-between">
+                          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                            Notifications
+                          </h3>
+                          {unreadCount > 0 && (
+                            <button
+                              onClick={handleMarkAllRead}
+                              className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                            >
+                              Mark all read
+                            </button>
+                          )}
+                        </div>
+                        <div className="max-h-64 overflow-y-auto">
+                          {notifications.length > 0 ? (
+                            notifications.map((n) => (
+                              <button
+                                key={n.id}
+                                onClick={() => handleNotifClick(n)}
+                                className={`w-full text-left px-4 py-2.5 hover:bg-slate-50 border-b border-slate-50 last:border-b-0 transition-colors flex gap-2.5 items-start ${
+                                  !n.isRead ? 'bg-emerald-50/20' : ''
+                                }`}
+                              >
+                                <span className={`mt-1.5 h-2 w-2 rounded-full flex-shrink-0 ${
+                                  !n.isRead ? 'bg-emerald-500' : 'bg-slate-300'
+                                }`}></span>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-xs ${!n.isRead ? 'font-semibold text-slate-900' : 'text-slate-600'}`}>
+                                    {n.title}
+                                  </p>
+                                  <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-2">
+                                    {n.message}
+                                  </p>
+                                  <span className="text-[9px] text-slate-400 mt-1 block">
+                                    {new Date(n.createdAt).toLocaleDateString(undefined, {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </span>
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-4 py-8 text-center text-xs text-slate-400 italic">
+                              No notifications yet
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </>
                   )}
@@ -250,6 +404,41 @@ export default function Navigation() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Global Floating Toasts Stack */}
+      <div className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
+        {toasts.map(t => (
+          <div
+            key={t.id}
+            className={`pointer-events-auto flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl border shadow-xl transition-all duration-300 animate-slide-in ${
+              t.type === 'success'
+                ? 'bg-emerald-50 border-emerald-250 text-emerald-900'
+                : t.type === 'error'
+                ? 'bg-red-50 border-red-250 text-red-900'
+                : 'bg-blue-50 border-blue-250 text-blue-900'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {t.type === 'success' && (
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-550 text-white text-[10px] font-bold">✓</div>
+              )}
+              {t.type === 'error' && (
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-550 text-white text-[10px] font-bold">✕</div>
+              )}
+              {t.type === 'info' && (
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-550 text-white text-[10px] font-bold">ℹ</div>
+              )}
+              <p className="text-xs font-semibold">{t.message}</p>
+            </div>
+            <button
+              onClick={() => setToasts(prev => prev.filter(item => item.id !== t.id))}
+              className="text-slate-400 hover:text-slate-600 font-bold text-xs pr-1"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
       </div>
     </header>
   );

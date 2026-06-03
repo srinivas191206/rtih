@@ -52,6 +52,7 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import confetti from 'canvas-confetti';
+import { showToast } from '@/lib/toast';
 
 export default function AdminCommandCenter() {
   const router = useRouter();
@@ -227,7 +228,7 @@ export default function AdminCommandCenter() {
   const handleCreateHackathon = (e: React.FormEvent) => {
     e.preventDefault();
     if (!wizHackTitle || !wizHackStartDate || !wizHackEndDate) {
-      alert('Please fill in required fields.');
+      showToast('Please fill in required fields.', 'error');
       return;
     }
     const newHack: Hackathon = {
@@ -247,6 +248,7 @@ export default function AdminCommandCenter() {
       spread: 70,
       origin: { y: 0.6 }
     });
+    showToast('Hackathon created successfully!', 'success');
     setWizHackTitle('');
     setWizHackTagline('');
     setWizHackTracks('');
@@ -262,7 +264,7 @@ export default function AdminCommandCenter() {
   // Application process actions
   const handleApproveApplication = (appId: string) => {
     if (!selectedCenterId) {
-      alert('Please select an incubation center to assign.');
+      showToast('Please select an incubation center to assign.', 'error');
       return;
     }
     db.approveApplication(appId, selectedCenterId);
@@ -271,11 +273,12 @@ export default function AdminCommandCenter() {
     setShowRejectForm(false);
     syncStates();
     confetti({ particleCount: 80, spread: 60 });
+    showToast('Startup application approved and center allocated!', 'success');
   };
 
   const handleRejectApplication = (appId: string) => {
     if (!rejectionReason) {
-      alert('Please provide a reason for rejection.');
+      showToast('Please provide a reason for rejection.', 'error');
       return;
     }
     db.rejectApplication(appId, rejectionReason);
@@ -283,13 +286,14 @@ export default function AdminCommandCenter() {
     setRejectionReason('');
     setShowRejectForm(false);
     syncStates();
+    showToast('Application rejected. Notification sent to founder.', 'info');
   };
 
   // Add department
   const handleAddDepartment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDeptName || !newDeptFocus) {
-      alert('Please provide name and focus areas.');
+      showToast('Please provide name and focus areas.', 'error');
       return;
     }
     const newDept: Department = {
@@ -305,13 +309,14 @@ export default function AdminCommandCenter() {
     setNewDeptDesc('');
     setShowAddDept(false);
     syncStates();
+    showToast('Department added successfully!', 'success');
   };
 
   // Add program
   const handleAddProgram = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProgName || !newProgDept) {
-      alert('Please provide name and parent department.');
+      showToast('Please provide name and parent department.', 'error');
       return;
     }
     const newProg: Program = {
@@ -333,6 +338,7 @@ export default function AdminCommandCenter() {
     setNewProgDuration(6);
     setShowAddProg(false);
     syncStates();
+    showToast('Accelerator program created successfully!', 'success');
   };
 
   // Health weight slider handles
@@ -361,7 +367,7 @@ export default function AdminCommandCenter() {
 
   const handleSaveWeights = () => {
     if (!isSumValid) {
-      alert('The weights sum must equal exactly 100% before saving.');
+      showToast('The weights sum must equal exactly 100% before saving.', 'error');
       return;
     }
     db.updateHealthWeights(weights);
@@ -371,6 +377,7 @@ export default function AdminCommandCenter() {
       spread: 60,
       colors: ['#10b981', '#3b82f6']
     });
+    showToast('Venture health configurator weights saved!', 'success');
   };
 
   return (

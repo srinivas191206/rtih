@@ -1867,6 +1867,8 @@ export class MockDatabase {
       if (!skipBackendSync) {
         setTimeout(() => { this.syncChanges(oldStr); }, 0);
       }
+      // Notify all listening components/pages to refresh their state
+      window.dispatchEvent(new Event('rtih_mode_change'));
     }
   }
 

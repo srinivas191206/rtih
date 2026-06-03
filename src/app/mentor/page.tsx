@@ -38,6 +38,7 @@ import {
   Check
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { showToast } from '@/lib/toast';
 
 export default function MentorDashboard() {
   const router = useRouter();
@@ -102,7 +103,7 @@ export default function MentorDashboard() {
   const handleSubmitAssessment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!auditingStartupId || !mentorFeedbackText.trim()) {
-      alert('Please fill out all assessment details.');
+      showToast('Please fill out all assessment details.', 'error');
       return;
     }
     db.addMentorAssessment(auditingStartupId, {
@@ -116,13 +117,13 @@ export default function MentorDashboard() {
     setMentorFeedbackText('');
     setMentorRating(5);
     syncStates();
-    alert('Mentor assessment submitted successfully!');
+    showToast('Mentor assessment submitted successfully!', 'success');
   };
 
   const handleFlagRisk = (e: React.FormEvent) => {
     e.preventDefault();
     if (!auditingStartupId || !riskDescription.trim()) {
-      alert('Please provide a description of the risk.');
+      showToast('Please provide a description of the risk.', 'error');
       return;
     }
     db.addRiskFlag(auditingStartupId, {
@@ -154,7 +155,7 @@ export default function MentorDashboard() {
     setRiskType('Inactivity');
     setRiskSeverity('High');
     syncStates();
-    alert('Venture risk flagged and dispatched to Spoke Manager successfully!');
+    showToast('Venture risk flagged and dispatched to Spoke Manager successfully!', 'success');
   };
 
   // Task Management tab state
@@ -197,7 +198,7 @@ export default function MentorDashboard() {
   const handleCreateGoal = (e: React.FormEvent) => {
     e.preventDefault();
     if (!goalStartupId || !goalTitle || !goalTargetDate) {
-      alert('Please fill out all required goal fields.');
+      showToast('Please fill out all required goal fields.', 'error');
       return;
     }
     db.addMentorshipGoal({
@@ -214,13 +215,13 @@ export default function MentorDashboard() {
     setGoalTargetDate('');
     setShowAddGoal(false);
     syncStates();
-    alert('Goal created successfully.');
+    showToast('Mentorship goal created successfully.', 'success');
   };
 
   const handleCreateActionItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (!actionStartupId || !actionTitle || !actionDeadline || !actionOwnerId) {
-      alert('Please fill out all required action item fields.');
+      showToast('Please fill out all required action item fields.', 'error');
       return;
     }
     db.addActionItem({
@@ -236,7 +237,7 @@ export default function MentorDashboard() {
     setActionDeadline('');
     setShowAddAction(false);
     syncStates();
-    alert('Action item assigned.');
+    showToast('Action item assigned successfully.', 'success');
   };
 
   
@@ -359,7 +360,7 @@ export default function MentorDashboard() {
   }, [db, selectedHackathonId]);
 
   const handleCompleteSession = (sessionId: string) => {
-    alert('Session status marked as Completed. AI meeting summary logged.');
+    showToast('Session status marked as Completed. AI meeting summary logged.', 'success');
     confetti({
       particleCount: 40,
       colors: ['#a855f7']
@@ -370,7 +371,7 @@ export default function MentorDashboard() {
     e.preventDefault();
     if (!evaluationStartupId || !evaluationFeedback) return;
 
-    alert('Founder progress audit logged successfully.');
+    showToast('Founder progress audit logged successfully.', 'success');
     setEvaluationFeedback('');
     setEvaluationStartupId('');
   };
@@ -379,7 +380,7 @@ export default function MentorDashboard() {
   const handleScoreSubmission = (e: React.FormEvent, submissionId: string) => {
     e.preventDefault();
     if (!judgeFeedbackText.trim()) {
-      alert('Please enter judge comments.');
+      showToast('Please enter judge comments.', 'error');
       return;
     }
 
@@ -401,7 +402,7 @@ export default function MentorDashboard() {
       spread: 70,
       colors: ['#a855f7', '#10b981']
     });
-    alert('Hackathon project deliverables score successfully registered!');
+    showToast('Hackathon project deliverables score successfully registered!', 'success');
   };
 
   const handleSelectScoring = (sub: HackathonSubmission) => {
@@ -449,7 +450,7 @@ export default function MentorDashboard() {
     setRevisionMilestone(null);
     setRevisionFeedback('');
     syncStates();
-    alert('Revision request submitted to the founder.');
+    showToast('Revision request submitted to the founder.', 'info');
   };
 
   const handleChatSubmit = async (e: React.FormEvent) => {
@@ -891,7 +892,7 @@ export default function MentorDashboard() {
                     <div className="border-t border-slate-100 pt-3 mt-4 flex items-center justify-between text-xs">
                       <span className="text-[10px] text-slate-400 font-bold">Health: <strong className="text-slate-700">{startup.healthScore}%</strong></span>
                       <button 
-                        onClick={() => alert(`Portfolio request sent for ${startup.name}. You will be notified upon founder approval.`)}
+                        onClick={() => showToast(`Portfolio request sent for ${startup.name}.`, 'info')}
                         className="text-purple-500 font-bold hover:underline"
                       >
                         Request portfolio link →
@@ -917,7 +918,7 @@ export default function MentorDashboard() {
                 </div>
                 <button
                   onClick={() => {
-                    if (portfolioStartups.length === 0) { alert('You have no startups in your portfolio.'); return; }
+                    if (portfolioStartups.length === 0) { showToast('You have no startups in your portfolio.', 'error'); return; }
                     setTaskStartupId(portfolioStartups[0].id);
                     setShowAddTask(true);
                   }}
@@ -978,7 +979,7 @@ export default function MentorDashboard() {
                     <div className="flex gap-2 pt-2 text-xs">
                       <button
                         onClick={() => {
-                          if (!taskTitle.trim() || !taskDesc.trim() || !taskDueDate || !taskStartupId) { alert('Please fill in all fields.'); return; }
+                          if (!taskTitle.trim() || !taskDesc.trim() || !taskDueDate || !taskStartupId) { showToast('Please fill in all fields.', 'error'); return; }
                           db.addTask({
                             id: `task-${Date.now()}`,
                             startupId: taskStartupId,
@@ -994,6 +995,7 @@ export default function MentorDashboard() {
                           setTaskTitle('');
                           setTaskDesc('');
                           setTaskDueDate('');
+                          showToast('Task assigned successfully!', 'success');
                         }}
                         className="flex-1 py-2 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-lg transition-colors"
                       >
@@ -1258,7 +1260,7 @@ export default function MentorDashboard() {
                 </div>
                 <button
                   onClick={() => {
-                    if (portfolioStartups.length === 0) { alert('You have no startups in your portfolio.'); return; }
+                    if (portfolioStartups.length === 0) { showToast('You have no startups in your portfolio.', 'error'); return; }
                     setSessionStartupId(portfolioStartups[0].id);
                     setShowLogSession(true);
                   }}
@@ -1319,7 +1321,7 @@ export default function MentorDashboard() {
                     <div className="flex gap-2 pt-2 text-xs">
                       <button
                         onClick={() => {
-                          if (!sessionDate || !sessionSummary.trim() || !sessionStartupId) { alert('Please fill in required fields.'); return; }
+                          if (!sessionDate || !sessionSummary.trim() || !sessionStartupId) { showToast('Please fill in required fields.', 'error'); return; }
                           const actions = sessionActionItemsInput.split(',').map(x => x.trim()).filter(Boolean);
                           db.addSession({
                             id: `session-${Date.now()}`,
@@ -1355,6 +1357,7 @@ export default function MentorDashboard() {
                           setSessionActionItemsInput('');
                           setSessionDate('');
                           confetti({ particleCount: 50 });
+                          showToast('Consultation session logged successfully!', 'success');
                         }}
                         className="flex-1 py-2 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-lg transition-colors"
                       >
@@ -1531,7 +1534,7 @@ export default function MentorDashboard() {
                 </div>
                 <button
                   onClick={() => {
-                    if (portfolioStartups.length === 0) { alert('You have no startups in your portfolio.'); return; }
+                    if (portfolioStartups.length === 0) { showToast('You have no startups in your portfolio.', 'error'); return; }
                     setRecStartupId(portfolioStartups[0].id);
                     setRecProposedStage(portfolioStartups[0].stage);
                     setShowRecommendStage(true);
@@ -1590,7 +1593,7 @@ export default function MentorDashboard() {
                     <div className="flex gap-2 pt-2 text-xs">
                       <button
                         onClick={() => {
-                          if (!recNotes.trim() || !recStartupId || !recProposedStage) { alert('Please fill in required fields.'); return; }
+                          if (!recNotes.trim() || !recStartupId || !recProposedStage) { showToast('Please fill in required fields.', 'error'); return; }
                           const startup = db.getStartup(recStartupId);
                           if (!startup) return;
                           
@@ -1624,6 +1627,7 @@ export default function MentorDashboard() {
                           setShowRecommendStage(false);
                           setRecNotes('');
                           confetti({ particleCount: 50 });
+                          showToast('Stage promotion recommendation submitted successfully!', 'success');
                         }}
                         className="flex-1 py-2 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-lg transition-colors"
                       >

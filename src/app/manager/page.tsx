@@ -25,6 +25,7 @@ import {
   Activity
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { showToast } from '@/lib/toast';
 
 const PIE_COLORS = ['#10b981', '#059669', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#84cc16'];
 
@@ -284,11 +285,12 @@ export default function ProgramManagerDashboard() {
     setManagerFeedback('');
     setIsRejectingRec(false);
     confetti({ particleCount: 100, spread: 80 });
+    showToast('Stage promotion request approved successfully!', 'success');
   };
 
   const handleRejectPromotion = (rec: StageRecommendation) => {
     if (!managerFeedback.trim()) {
-      alert('Please provide rejection feedback.');
+      showToast('Please provide rejection feedback.', 'error');
       return;
     }
     db.updateStageRecommendation(rec.id, { status: 'Rejected', managerFeedback });
@@ -311,6 +313,7 @@ export default function ProgramManagerDashboard() {
     setSelectedRecommendation(null);
     setManagerFeedback('');
     setIsRejectingRec(false);
+    showToast('Stage promotion request returned to mentor with feedback.', 'info');
   };
 
   // Handler for mentor assignment
@@ -1340,7 +1343,7 @@ export default function ProgramManagerDashboard() {
                                   type="button"
                                   onClick={() => {
                                     if (!interventionTitle.trim() || !interventionDesc.trim() || !interventionMentorId) {
-                                      alert('Please fill out all intervention details.');
+                                      showToast('Please fill out all intervention details.', 'error');
                                       return;
                                     }
                                     db.addInterventionLog(selectedHealthStartup.id, interventionTitle, interventionDesc);
@@ -1391,6 +1394,7 @@ export default function ProgramManagerDashboard() {
                                     setInterventionTitle('');
                                     setInterventionDesc('');
                                     confetti({ particleCount: 60, spread: 60, colors: ['#f97316', '#ef4444'] });
+                                    showToast('Intervention plan deployed and scheduled successfully!', 'success');
                                   }}
                                   className="w-full py-2.5 bg-red-600 hover:bg-red-750 text-white font-bold rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5 animate-pulse"
                                 >
