@@ -1882,12 +1882,13 @@ export class MockDatabase {
       return;
 
       console.log('[RTIH] Connecting to Supabase...');
-      const pulled = await supabasePullAll();
+      // const pulled = await supabasePullAll();
+      const pulled: any = {};
 
       if (!pulled.startups || pulled.startups.length === 0) {
         // Tables are empty — seed from local mock data
         console.log('[RTIH] Supabase tables are empty. Seeding with pre-scaled mock data...');
-        await supabaseSeedAll(this.data);
+        // await supabaseSeedAll(this.data);
         console.log('[RTIH] ✅ Supabase seeding completed successfully!');
       } else {
         // Hydrate in-memory state from Supabase
@@ -1937,7 +1938,7 @@ export class MockDatabase {
           const oldItem = oldCol.find((o: any) => o.id === item.id || (o.email && o.email === item.email));
           const isModified = !oldItem || JSON.stringify(oldItem) !== JSON.stringify(item);
           if (isModified) {
-            await supabaseUpsertEntity(col.type, item);
+            // await supabaseUpsertEntity(col.type, item);
           }
         }
       }
