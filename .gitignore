@@ -9,3 +9,4 @@
 .env.local
 # misc
 .DS_Store
+.vercel

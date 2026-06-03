@@ -622,7 +622,7 @@ export function generateGrowthForecast(startup: any) {
 export interface HOSRound { id: string; name: string; weightage: number; qualificationRules: string; }
 export interface HOSEvaluation { id: string; submissionId: string; roundId: string; judgeId: string; totalScore: number; status: string; }
 export interface HOSSubmission { id: string; teamId: string; roundId: string; version: number; }
-export interface HOSTeam { id: string; hackathonId: string; name: string; status: string; }
+export interface HOSTeam { id: string; hackathonId: string; name: string; status: string; startupPotentialCategory?: string; }
 
 export function calculateRoundScore(evaluations: HOSEvaluation[], round: HOSRound): number {
   if (!evaluations || evaluations.length === 0) return 0;
