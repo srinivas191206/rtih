@@ -220,13 +220,27 @@ export default function Navigation() {
                 </div>
               </div>
             ) : (
-              <Link
-                href="/login"
-                className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-md shadow-emerald-500/10 transition-colors"
-              >
-                <UserCheck className="w-4 h-4" />
-                <span>Ecosystem Sign In</span>
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/register"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-400 text-emerald-600 hover:bg-emerald-50 text-xs font-bold transition-colors"
+                >
+                  Apply to RTIH
+                </Link>
+                <Link
+                  href="/apply"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-colors"
+                >
+                  Find Jobs
+                </Link>
+                <Link
+                  href="/login"
+                  className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-md shadow-emerald-500/10 transition-colors"
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>Sign In</span>
+                </Link>
+              </div>
             )}
           </div>
         </div>

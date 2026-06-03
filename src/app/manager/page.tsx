@@ -327,7 +327,14 @@ export default function ProgramManagerDashboard() {
 
   // Handlers for Intervention
   const handleScheduleIntervention = (startupName: string) => {
-    alert(`Intervention scheduled. RTIH EIR and technical advisors linked to ${startupName}. Email notification sent to founders.`);
+    const startup = db.getStartups().find(s => s.name === startupName);
+    if (!startup) return;
+    db.addInterventionLog(
+      startup.id,
+      `Emergency Intervention: ${startupName}`,
+      `Intervention triggered by manager review. RTIH EIR and technical advisors have been notified and linked to this startup's support queue.`
+    );
+    setDb(getDb());
     confetti({
       particleCount: 50,
       colors: ['#ef4444', '#f97316']

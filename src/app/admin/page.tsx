@@ -241,6 +241,7 @@ export default function AdminCommandCenter() {
       status: 'Active'
     };
     db.addHackathon(newHack);
+    syncStates();
     confetti({
       particleCount: 100,
       spread: 70,
@@ -250,7 +251,6 @@ export default function AdminCommandCenter() {
     setWizHackTagline('');
     setWizHackTracks('');
     setWizSelectedJudges([]);
-    alert('Hackathon created and published to all startup portals!');
   };
 
   const toggleSelectJudge = (mentorId: string) => {
@@ -268,7 +268,9 @@ export default function AdminCommandCenter() {
     db.approveApplication(appId, selectedCenterId);
     setSelectedApp(null);
     setSelectedCenterId('');
-    alert('Application approved! Startup has been admitted to the selected hub.');
+    setShowRejectForm(false);
+    syncStates();
+    confetti({ particleCount: 80, spread: 60 });
   };
 
   const handleRejectApplication = (appId: string) => {
@@ -280,7 +282,7 @@ export default function AdminCommandCenter() {
     setSelectedApp(null);
     setRejectionReason('');
     setShowRejectForm(false);
-    alert('Application rejected. Founder has been notified with the specified reasons.');
+    syncStates();
   };
 
   // Add department
@@ -302,7 +304,7 @@ export default function AdminCommandCenter() {
     setNewDeptFocus('');
     setNewDeptDesc('');
     setShowAddDept(false);
-    alert('New Government Department added to command system!');
+    syncStates();
   };
 
   // Add program
@@ -330,7 +332,7 @@ export default function AdminCommandCenter() {
     setNewProgStages([]);
     setNewProgDuration(6);
     setShowAddProg(false);
-    alert('New Accelerator Program activated for ecological cohorts!');
+    syncStates();
   };
 
   // Health weight slider handles

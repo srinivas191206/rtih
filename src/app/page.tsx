@@ -80,7 +80,7 @@ export default function Home() {
       title: 'Emerging Biotech Healthcare Diagnostics',
       dept: 'AP Health & Family Welfare',
       grant: '₹12,50,000 Grant Pool',
-      deadline: 'August 01, 25',
+      deadline: 'August 01, 2026',
       desc: 'Create low-cost rapid screening models for rural primary health clinics using AI diagnostics.'
     }
   ];
@@ -156,6 +156,18 @@ export default function Home() {
                   className="px-5 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold flex items-center gap-2 shadow-lg shadow-emerald-500/15 transition-all"
                 >
                   Access Ecosystem Portal (Sign In) <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  href="/register"
+                  className="px-5 py-3 rounded-lg border border-emerald-500 text-emerald-600 hover:bg-emerald-50 text-sm font-semibold flex items-center gap-2 transition-all"
+                >
+                  Apply to RTIH Incubation
+                </Link>
+                <Link
+                  href="/apply"
+                  className="px-5 py-3 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold flex items-center gap-2 transition-all"
+                >
+                  Find Jobs at Startups
                 </Link>
               </>
             )}
@@ -243,7 +255,7 @@ export default function Home() {
                   </div>
                   <div className="text-right shrink-0 flex flex-col justify-between items-end text-[10px]">
                     <span className="text-slate-400 font-semibold">{challenge.deadline}</span>
-                    <Link href="/founder" className="text-emerald-500 font-bold hover:underline">
+                    <Link href="/register" className="text-emerald-500 font-bold hover:underline">
                       Apply →
                     </Link>
                   </div>
