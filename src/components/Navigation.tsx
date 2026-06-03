@@ -229,9 +229,15 @@ export default function Navigation() {
                 </Link>
                 <Link
                   href="/apply"
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-colors"
+                  className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-colors"
                 >
                   Find Jobs
+                </Link>
+                <Link
+                  href="/alumni"
+                  className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-colors"
+                >
+                  Alumni
                 </Link>
                 <Link
                   href="/login"

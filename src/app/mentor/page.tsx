@@ -1491,7 +1491,6 @@ export default function MentorDashboard() {
                               spread: 50,
                               colors: ['#10b981', '#a855f7']
                             });
-                            alert(`Milestone "${milestone.title}" approved! Health index and scores updated.`);
                           }}
                           className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer"
                         >

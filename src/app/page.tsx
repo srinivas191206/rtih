@@ -317,7 +317,13 @@ export default function Home() {
         <p className="font-medium text-slate-600 dark:text-slate-300">
           Ratan Tata Innovation Hub (RTIH) • Government of Andhra Pradesh
         </p>
-        <p className="mt-2 text-[10px]">
+        <div className="flex items-center justify-center gap-6 mt-3 text-[11px]">
+          <a href="/register" className="hover:text-emerald-600 font-semibold transition-colors">Apply for Incubation</a>
+          <a href="/apply" className="hover:text-emerald-600 font-semibold transition-colors">Find Jobs</a>
+          <a href="/alumni" className="hover:text-emerald-600 font-semibold transition-colors">Alumni Network</a>
+          <a href="/login" className="hover:text-emerald-600 font-semibold transition-colors">Sign In</a>
+        </div>
+        <p className="mt-3 text-[10px]">
           Digital Operating System designed for Startup Policy implementation. All rights reserved © 2026.
         </p>
       </footer>

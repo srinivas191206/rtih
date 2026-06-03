@@ -1254,8 +1254,8 @@ export default function ProgramManagerDashboard() {
                                       onClick={() => {
                                         db.resolveInterventionLog(selectedHealthStartup.id, log.id);
                                         setDb(getDb());
-                                        setSelectedHealthStartup(db.getStartup(selectedHealthStartup.id) || null);
-                                        alert('Intervention resolved successfully.');
+                                        setSelectedHealthStartup(getDb().getStartup(selectedHealthStartup.id) || null);
+                                        confetti({ particleCount: 40, spread: 40, colors: ['#10b981'] });
                                       }}
                                       className="w-full py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold rounded transition-colors"
                                     >
@@ -1387,10 +1387,9 @@ export default function ProgramManagerDashboard() {
                                     }
 
                                     setDb(getDb());
-                                    setSelectedHealthStartup(db.getStartup(selectedHealthStartup.id) || null);
+                                    setSelectedHealthStartup(getDb().getStartup(selectedHealthStartup.id) || null);
                                     setInterventionTitle('');
                                     setInterventionDesc('');
-                                    alert('Intervention successfully scheduled and logged! Notifications sent to Founder and Mentor.');
                                     confetti({ particleCount: 60, spread: 60, colors: ['#f97316', '#ef4444'] });
                                   }}
                                   className="w-full py-2.5 bg-red-600 hover:bg-red-750 text-white font-bold rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5 animate-pulse"

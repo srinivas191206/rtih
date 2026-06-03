@@ -365,12 +365,12 @@ export default function AdminCommandCenter() {
       return;
     }
     db.updateHealthWeights(weights);
+    syncStates();
     confetti({
       particleCount: 80,
       spread: 60,
       colors: ['#10b981', '#3b82f6']
     });
-    alert('Venture Health configurations updated successfully! Recalculated health indices statewide.');
   };
 
   return (
