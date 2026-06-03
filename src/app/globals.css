@@ -1,26 +1,172 @@
 @import "tailwindcss";
 
+@variant dark (.dark-mode-disabled);
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  
+  /* Color tokens */
+  --emerald-ap: #00A86B;
+  --teal-ap: #008080;
+  --navy-ap-dark: #0B132B;
+  --navy-ap-light: #1C2541;
+  --blue-ap: #3A86C8;
+
+  /* Forced light theme values */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --foreground: #0B132B;
+  --foreground-muted: #475569;
+  
+  --border-color: #e2e8f0;
+  --border-color-focus: #3A86C8;
+  
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+
+  /* Leaflet map styles reset */
+  --map-bg: #e5e3df;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  --color-primary: var(--emerald-ap);
+  --color-primary-dark: var(--teal-ap);
+  --color-navy-dark: var(--navy-ap-dark);
+  --color-navy-light: var(--navy-ap-light);
+  --color-accent: var(--blue-ap);
+  --color-border: var(--border-color);
+  
+  --font-sans: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--bg-primary);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1), color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom Scrollbar Optimization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground-muted);
+}
+
+/* Custom focus states */
+a:focus-visible, 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--border-color-focus);
+  outline-offset: 2px;
+}
+
+/* Executive Card Structure */
+.rtih-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease;
+}
+
+.rtih-card:hover {
+  border-color: light-dark(#cbd5e1, #334155);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+}
+
+/* Premium Gradient Title */
+.executive-title {
+  background: linear-gradient(135deg, var(--foreground) 30%, var(--foreground-muted) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.executive-gradient {
+  background: linear-gradient(135deg, var(--emerald-ap), var(--teal-ap));
+}
+
+/* Pulse animation for map indicators */
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(0, 168, 107, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(0, 168, 107, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(0, 168, 107, 0);
+  }
+}
+
+.custom-icon div {
+  animation: pulse 2s infinite;
+}
+
+/* Leaflet maps container customization */
+.leaflet-container {
+  background-color: var(--map-bg) !important;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+/* React Flow customizations */
+.react-flow__node {
+  border-radius: 12px !important;
+  border: 1px solid var(--border-color) !important;
+  padding: 12px !important;
+  font-family: var(--font-sans) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+.react-flow__node:hover {
+  border-color: var(--border-color-focus) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.react-flow__edge-path {
+  stroke: var(--border-color) !important;
+  stroke-width: 2px !important;
+  transition: stroke 0.2s ease;
+}
+
+.react-flow__edge.active .react-flow__edge-path {
+  stroke: var(--emerald-ap) !important;
+  stroke-width: 3px !important;
+}
+
+.react-flow__controls button {
+  background: var(--bg-secondary) !important;
+  color: var(--foreground) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  fill: var(--foreground) !important;
+}
+
+.react-flow__controls button:hover {
+  background: var(--bg-tertiary) !important;
 }
