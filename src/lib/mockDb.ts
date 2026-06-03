@@ -1915,7 +1915,7 @@ export class MockDatabase {
       // if (!isSupabaseConfigured()) return;
       return; // Added to prevent offline error since db doesn't exist
 
-      const oldData = JSON.parse(oldStr);
+      const oldData = JSON.parse(oldStr as string);
       const collections = [
         { key: 'startups', type: 'startup' },
         { key: 'founders', type: 'founder' },
