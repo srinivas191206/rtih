@@ -6,11 +6,13 @@ export const dynamic = 'force-dynamic';
 
 // Helper functions to validate API key formats before making network requests
 function isValidGeminiKey(key?: string): boolean {
-  return !!key && key.startsWith('AIzaSy') && key.length > 10;
+  // Accept any non-empty key with reasonable length — don't restrict by prefix
+  // since different Google API key formats exist (AIzaSy*, AQ.*, etc.)
+  return !!key && key.length > 10;
 }
 
 function isValidOpenRouterKey(key?: string): boolean {
-  return !!key && (key.startsWith('sk-or-v1-') || key.length > 20);
+  return !!key && key.length > 20;
 }
 
 function isValidGroqKey(key?: string): boolean {
@@ -59,6 +61,7 @@ export async function POST(request: Request) {
     // 1. Try Native Gemini API if key is valid
     if (isValidGeminiKey(geminiKey)) {
       try {
+        console.log('[RTIH AI] Trying Google Gemini...');
         const genAI = new GoogleGenerativeAI(geminiKey!);
         const model = genAI.getGenerativeModel({
           model: 'gemini-1.5-flash',
@@ -67,15 +70,21 @@ export async function POST(request: Request) {
 
         const response = await model.generateContent(prompt);
         const text = response.response.text();
-        return NextResponse.json({ text, isLive: true, provider: 'Google Gemini' });
-      } catch (geminiError) {
-        console.error('Native Gemini API error, falling back:', geminiError);
+        if (text) {
+          console.log('[RTIH AI] Google Gemini responded successfully.');
+          return NextResponse.json({ text, isLive: true, provider: 'Google Gemini' });
+        }
+      } catch (geminiError: any) {
+        console.error('[RTIH AI] Gemini failed:', geminiError?.message || geminiError);
       }
     }
 
     // 2. Try OpenRouter API if key is valid
     if (isValidOpenRouterKey(openrouterKey)) {
       try {
+        console.log('[RTIH AI] Trying OpenRouter...');
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12000);
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -90,20 +99,23 @@ export async function POST(request: Request) {
               { role: 'system', content: systemInstruction },
               { role: 'user', content: prompt }
             ]
-          })
+          }),
+          signal: controller.signal
         });
+        clearTimeout(timeout);
 
         if (response.ok) {
           const data = await response.json();
           const text = data.choices?.[0]?.message?.content;
           if (text) {
+            console.log('[RTIH AI] OpenRouter responded successfully.');
             return NextResponse.json({ text, isLive: true, provider: 'OpenRouter' });
           }
         } else {
-          console.error('OpenRouter API returned non-200 status:', response.status);
+          console.error('[RTIH AI] OpenRouter non-200:', response.status, await response.text());
         }
-      } catch (orError) {
-        console.error('OpenRouter API error, falling back:', orError);
+      } catch (orError: any) {
+        console.error('[RTIH AI] OpenRouter failed:', orError?.message || orError);
       }
     }
 
@@ -111,6 +123,9 @@ export async function POST(request: Request) {
     for (let i = 0; i < GROQ_KEYS.length; i++) {
       const activeGroqKey = GROQ_KEYS[i];
       try {
+        console.log(`[RTIH AI] Trying Groq Key ${i + 1}/${GROQ_KEYS.length}...`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12000);
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -123,20 +138,24 @@ export async function POST(request: Request) {
               { role: 'system', content: systemInstruction },
               { role: 'user', content: prompt }
             ]
-          })
+          }),
+          signal: controller.signal
         });
+        clearTimeout(timeout);
 
         if (response.ok) {
           const data = await response.json();
           const text = data.choices?.[0]?.message?.content;
           if (text) {
+            console.log(`[RTIH AI] Groq Key ${i + 1} responded successfully.`);
             return NextResponse.json({ text, isLive: true, provider: `Groq (Key ${i + 1})` });
           }
         } else {
-          console.error(`Groq API Key ${i + 1} returned non-200 status:`, response.status);
+          const errText = await response.text();
+          console.error(`[RTIH AI] Groq Key ${i + 1} non-200:`, response.status, errText);
         }
-      } catch (groqError) {
-        console.error(`Groq API Key ${i + 1} error, trying next:`, groqError);
+      } catch (groqError: any) {
+        console.error(`[RTIH AI] Groq Key ${i + 1} failed:`, groqError?.message || groqError);
       }
     }
 

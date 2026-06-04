@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { getDb } from '@/lib/mockDb';
 import { GraduationCap, ShieldAlert } from 'lucide-react';
 
@@ -22,6 +22,18 @@ const getUniversityDistrictDisplay = (name: string, district: string) => {
 };
 
 export default function OutpostCenter() {
+  const [renderTrigger, setRenderTrigger] = useState(0);
+
+  useEffect(() => {
+    const handleSync = () => {
+      setRenderTrigger(prev => prev + 1);
+    };
+    window.addEventListener('rtih_mode_change', handleSync);
+    return () => {
+      window.removeEventListener('rtih_mode_change', handleSync);
+    };
+  }, []);
+
   const data = useMemo(() => {
     try {
       const db = getDb();
@@ -33,7 +45,7 @@ export default function OutpostCenter() {
       console.error(e);
       return { universities: [], outposts: [] };
     }
-  }, []);
+  }, [renderTrigger]);
 
   return (
     <div className="bg-slate-900/40 border border-white/10 backdrop-blur-md rounded-xl p-5 shadow-lg text-white">

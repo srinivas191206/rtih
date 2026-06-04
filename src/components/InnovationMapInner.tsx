@@ -35,54 +35,66 @@ export default function InnovationMapInner() {
   const [centers, setCenters] = useState<CenterInfo[]>([]);
 
   useEffect(() => {
-    try {
-      const db = getDb();
-      const outposts = db.getOutposts();
-      
-      const amaravatiStartups = db.getStartups().filter(s => s.district === 'Krishna' || s.district === 'Guntur').length;
+    const loadData = () => {
+      try {
+        const db = getDb();
+        const outposts = db.getOutposts();
+        
+        const amaravatiStartups = db.getStartups().filter(s => s.district === 'Krishna' || s.district === 'Guntur').length;
 
-      // Coordinate mappings
-      const coords: Record<string, { lat: number; lng: number }> = {
-        'Amaravati': { lat: 16.5062, lng: 80.6480 },
-        'Visakhapatnam': { lat: 17.6868, lng: 83.2185 },
-        'Vijayawada': { lat: 16.5150, lng: 80.5200 }, // offset slightly from Amaravati
-        'Rajamahendravaram': { lat: 17.0005, lng: 81.8040 },
-        'Tirupati': { lat: 13.6288, lng: 79.4192 },
-        'Ananthapuramu': { lat: 14.6819, lng: 77.6006 }
-      };
+        // Coordinate mappings
+        const coords: Record<string, { lat: number; lng: number }> = {
+          'Amaravati': { lat: 16.5062, lng: 80.6480 },
+          'Visakhapatnam': { lat: 17.6868, lng: 83.2185 },
+          'Vijayawada': { lat: 16.5150, lng: 80.5200 }, // offset slightly from Amaravati
+          'Rajamahendravaram': { lat: 17.0005, lng: 81.8040 },
+          'Tirupati': { lat: 13.6288, lng: 79.4192 },
+          'Ananthapuramu': { lat: 14.6819, lng: 77.6006 }
+        };
 
-      const items: CenterInfo[] = [
-        {
-          name: 'Amaravati (Central Hub)',
-          lat: coords['Amaravati'].lat,
-          lng: coords['Amaravati'].lng,
-          type: 'Hub',
-          incubated: amaravatiStartups + 45,
-          programs: 88,
-          engagement: 96,
-          lead: 'Sri L. Premchandra Reddy, IAS'
-        }
-      ];
+        const items: CenterInfo[] = [
+          {
+            name: 'Amaravati (Central Hub)',
+            lat: coords['Amaravati'].lat,
+            lng: coords['Amaravati'].lng,
+            type: 'Hub',
+            incubated: amaravatiStartups + 45,
+            programs: 88,
+            engagement: 96,
+            lead: 'Sri L. Premchandra Reddy, IAS'
+          }
+        ];
 
-      outposts.forEach(o => {
-        const coord = coords[o.name] || { lat: 16.0, lng: 80.0 };
-        items.push({
-          name: o.name,
-          lat: coord.lat,
-          lng: coord.lng,
-          type: 'Spoke',
-          incubated: o.incubatedCount + 10,
-          programs: o.programsCount,
-          engagement: o.mentorEngagement,
-          lead: o.leadName
+        outposts.forEach(o => {
+          const coord = coords[o.name] || { lat: 16.0, lng: 80.0 };
+          items.push({
+            name: o.name,
+            lat: coord.lat,
+            lng: coord.lng,
+            type: 'Spoke',
+            incubated: o.incubatedCount + 10,
+            programs: o.programsCount,
+            engagement: o.mentorEngagement,
+            lead: o.leadName
+          });
         });
-      });
 
-      setCenters(items);
-      setSelectedCenter(items[0]);
-    } catch (e) {
-      console.error('Failed to load outpost stats', e);
-    }
+        setCenters(items);
+        setSelectedCenter(prev => {
+          if (!prev) return items[0];
+          const updated = items.find(item => item.name === prev.name);
+          return updated || items[0];
+        });
+      } catch (e) {
+        console.error('Failed to load outpost stats', e);
+      }
+    };
+
+    loadData();
+    window.addEventListener('rtih_mode_change', loadData);
+    return () => {
+      window.removeEventListener('rtih_mode_change', loadData);
+    };
   }, []);
 
   const hub = centers.find(c => c.type === 'Hub');

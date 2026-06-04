@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { 
@@ -19,6 +19,7 @@ import {
   SECTORS,
   DISTRICTS
 } from '@/lib/mockDb';
+import { showToast } from '@/lib/toast';
 import { 
   calculateVentureHealth, 
   matchGovernmentSchemes, 
@@ -311,6 +312,7 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
 
   // Communication Thread States
   const [messageText, setMessageText] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Recruitment/Job States
   const [jobTitle, setJobTitle] = useState('');
@@ -385,9 +387,16 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
     };
   }, [selectedStartupId]);
 
+  // Auto-scroll the Communication Hub to the latest message
+  useEffect(() => {
+    if (activeTab === 'communications' && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [activeTab, renderTrigger, selectedStartupId]);
+
   const startup = useMemo(() => {
     return db.getStartup(selectedStartupId) || db.getStartups()[0];
-  }, [db, selectedStartupId]);
+  }, [db, selectedStartupId, renderTrigger]);
 
   const health = useMemo(() => {
     if (!startup) return null;
@@ -407,11 +416,11 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
   // Certifications list
   const activeCertifications = useMemo(() => {
     return db.getCertifications().filter(c => c.startupId === startup.id);
-  }, [db, startup.id]);
+  }, [db, startup.id, renderTrigger]);
 
   const hasHackathonParticipation = useMemo(() => {
     return db.getRegistrations().some(r => r.startupId === startup.id);
-  }, [db, startup.id]);
+  }, [db, startup.id, renderTrigger]);
 
   const lmmCompletionRate = useMemo(() => {
     const stageCourses = LMM_COURSES.filter(c => c.stage === 'idea' || c.stage === 'validation' || c.stage === startup.stage);
@@ -444,7 +453,7 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
   const handleUpdateOrganization = (e: React.FormEvent) => {
     e.preventDefault();
     if (!orgName.trim()) {
-      alert('Organization name cannot be empty.');
+      showToast('Organization name cannot be empty.', 'error');
       return;
     }
     const dbInstance = getDb();
@@ -463,7 +472,7 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
     if (updated) {
       window.dispatchEvent(new Event('rtih_mode_change'));
       syncStates();
-      alert('Organization profile updated successfully!');
+      showToast('Organization profile updated successfully!', 'success');
     }
   };
 
@@ -477,7 +486,7 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
   const handleSubmitTaskEvidence = (taskId: string, e: React.FormEvent) => {
     e.preventDefault();
     if (!evidenceNote.trim()) {
-      alert('Please enter an evidence note.');
+      showToast('Please enter an evidence note.', 'error');
       return;
     }
     const dbInstance = getDb();
@@ -513,13 +522,13 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
     
     window.dispatchEvent(new Event('rtih_mode_change'));
     syncStates();
-    alert('Task evidence submitted successfully for mentor verification!');
+    showToast('Task evidence submitted successfully for mentor verification!', 'success');
   };
 
   const handleAddDocument = (e: React.FormEvent) => {
     e.preventDefault();
     if (!docName.trim() || !docUrl.trim()) {
-      alert('Please fill out all document details.');
+      showToast('Please fill out all document details.', 'error');
       return;
     }
     
@@ -572,7 +581,7 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
 
     window.dispatchEvent(new Event('rtih_mode_change'));
     syncStates();
-    alert('Document added to vault successfully!');
+    showToast('Document added to vault successfully!', 'success');
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -681,7 +690,7 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
     
     setTimeout(() => {
       setRequestedMentorId(null);
-      alert('Mentor request sent successfully! They will review your profile shortly.');
+      showToast('Mentor request sent successfully! They will review your profile shortly.', 'success');
       syncStates();
     }, 1500);
   };
@@ -689,7 +698,7 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
   const handlePostJob = (e: React.FormEvent) => {
     e.preventDefault();
     if (!jobTitle.trim() || !jobDescription.trim() || !jobSkills.trim() || !jobStipend.trim() || !jobDeadline.trim()) {
-      alert('Please fill out all job opening fields.');
+      showToast('Please fill out all job opening fields.', 'error');
       return;
     }
 
@@ -718,7 +727,7 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
 
     window.dispatchEvent(new Event('rtih_mode_change'));
     syncStates();
-    alert('Job opening listed on public jobs portal successfully!');
+    showToast('Job opening listed on public jobs portal successfully!', 'success');
   };
 
   const handleUpdateApplicationStatus = (jobId: string, appId: string, status: 'Applied' | 'Shortlisted' | 'Rejected') => {
@@ -806,12 +815,12 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
     ];
 
     return timeline;
-  }, [db, startup, completedCourses, activeCertifications, hasHackathonParticipation]);
+  }, [db, startup, completedCourses, activeCertifications, hasHackathonParticipation, renderTrigger]);
 
   // Available Hackathons
   const hackathons = useMemo(() => {
     return db.getHackathons();
-  }, [db]);
+  }, [db, renderTrigger]);
 
   // Handle GPS Stage advance
   const handleStageSelect = (stage: StartupStage) => {
@@ -842,11 +851,11 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
   // Toggle OKR / Submit Milestone Evidence
   const handleToggleMilestone = (milestoneId: string, currentStatus: string) => {
     if (currentStatus === 'Completed') {
-      alert('This milestone has been verified by your mentor and cannot be modified.');
+      showToast('This milestone has been verified by your mentor and cannot be modified.', 'error');
       return;
     }
     if (currentStatus === 'Submitted') {
-      alert('This milestone is currently under review by your mentor.');
+      showToast('This milestone is currently under review by your mentor.', 'info');
       return;
     }
     
@@ -860,43 +869,54 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
     e.preventDefault();
     if (!selectedMilestoneId) return;
     if (!milestoneEvidenceNote.trim()) {
-      alert('Please enter an evidence note.');
+      showToast('Please enter an evidence note.', 'error');
       return;
     }
 
-    const dbInstance = getDb();
-    dbInstance.updateMilestone(
-      startup.id,
-      selectedMilestoneId,
-      'Submitted',
-      milestoneEvidenceNote,
-      milestoneEvidenceUrl
-    );
+    try {
+      // Auto-fix URL protocol if user omitted it
+      let evidenceUrl = milestoneEvidenceUrl.trim();
+      if (evidenceUrl && !evidenceUrl.startsWith('http://') && !evidenceUrl.startsWith('https://')) {
+        evidenceUrl = `https://${evidenceUrl}`;
+      }
 
-    // Get milestone title for notification
-    const milestoneObj = startup.milestones.find(m => m.id === selectedMilestoneId);
-    const title = milestoneObj ? milestoneObj.title : 'Milestone Objective';
+      const dbInstance = getDb();
+      dbInstance.updateMilestone(
+        startup.id,
+        selectedMilestoneId,
+        'Submitted',
+        milestoneEvidenceNote,
+        evidenceUrl || undefined
+      );
 
-    // Add notification to mentor
-    const mentorObj = dbInstance.getMentors().find(m => m.portfolioStartups?.includes(startup.id));
-    if (mentorObj) {
-      dbInstance.addNotification({
-        id: `notif-${Date.now()}`,
-        userId: mentorObj.email,
-        type: 'task_verified',
-        title: 'Milestone Verification Required',
-        message: `${startup.name} has submitted evidence for milestone "${title}". Review required.`,
-        isRead: false,
-        createdAt: new Date().toISOString(),
-        linkTo: '/mentor'
-      });
+      // Get milestone title for notification
+      const milestoneObj = startup.milestones.find(m => m.id === selectedMilestoneId);
+      const title = milestoneObj ? milestoneObj.title : 'Milestone Objective';
+
+      // Add notification to mentor
+      const mentorObj = dbInstance.getMentors().find(m => m.portfolioStartups?.includes(startup.id));
+      if (mentorObj) {
+        dbInstance.addNotification({
+          id: `notif-${Date.now()}`,
+          userId: mentorObj.email,
+          type: 'task_verified',
+          title: 'Milestone Verification Required',
+          message: `${startup.name} has submitted evidence for milestone "${title}". Review required.`,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          linkTo: '/mentor'
+        });
+      }
+
+      setSelectedMilestoneId(null);
+      setMilestoneEvidenceUrl('');
+      setMilestoneEvidenceNote('');
+      syncStates();
+      showToast('Milestone evidence submitted successfully for mentor verification!', 'success');
+    } catch (err) {
+      console.error('[RTIH] Milestone submission error:', err);
+      showToast('Failed to submit milestone evidence. Please try again.', 'error');
     }
-
-    setSelectedMilestoneId(null);
-    setMilestoneEvidenceUrl('');
-    setMilestoneEvidenceNote('');
-    syncStates();
-    alert('Milestone evidence submitted successfully for mentor verification!');
   };
 
   // Toggle Skill
@@ -940,7 +960,7 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
   const handleWizardSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!wizIdea.trim() || !wizProblem.trim() || !wizCustomers.trim() || !wizExperience.trim()) {
-      alert('Please fill out all wizard input fields.');
+      showToast('Please fill out all wizard input fields.', 'error');
       return;
     }
 
@@ -1006,13 +1026,13 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
       particleCount: 80,
       colors: ['#10b981', '#3b82f6']
     });
-    alert(`Startup team registered successfully for ${db.getHackathon(hackathonId)?.title}!`);
+    showToast(`Startup team registered successfully for ${db.getHackathon(hackathonId)?.title}!`, 'success');
   };
 
   const handleSubmitHackathonProject = (e: React.FormEvent, hackathonId: string) => {
     e.preventDefault();
     if (!subProjectTitle.trim() || !subDescription.trim() || !subDemoUrl.trim()) {
-      alert('Please fill in all submission fields.');
+      showToast('Please fill in all submission fields.', 'error');
       return;
     }
 
@@ -1036,7 +1056,7 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
       particleCount: 100,
       spread: 70
     });
-    alert('Project deliverables submitted successfully! Awaiting judging evaluation.');
+    showToast('Project deliverables submitted successfully! Awaiting judging evaluation.', 'success');
   };
 
   // Network Connections
@@ -1079,7 +1099,7 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
 
       return matchesSearch && matchesSector && matchesDistrict && matchesSkill;
     });
-  }, [db, networkSearch, networkSector, networkDistrict, networkSkillFilter, startup.id]);
+  }, [db, networkSearch, networkSector, networkDistrict, networkSkillFilter, startup.id, renderTrigger]);
 
   // Chat Submission
   const handleChatSubmit = async (e: React.FormEvent) => {
@@ -1092,6 +1112,9 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
     setIsTyping(true);
 
     try {
+      const controller = new AbortController();
+      const fetchTimeout = setTimeout(() => controller.abort(), 20000);
+
       const response = await fetch('/api/ai/copilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1105,8 +1128,11 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
             assessment: db.getAssessment(startup.id)
           },
           role: 'Founder'
-        })
+        }),
+        signal: controller.signal
       });
+      clearTimeout(fetchTimeout);
+
       if (response.ok) {
         const data = await response.json();
         setChatHistory(prev => [...prev, { sender: 'ai', text: data.text }]);
@@ -1115,11 +1141,20 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
           setAiProvider(data.provider);
         }
       } else {
-        throw new Error('API return code ' + response.status);
+        throw new Error(`Server returned ${response.status}`);
       }
-    } catch (error) {
-      console.error('AI chat error:', error);
-      setChatHistory(prev => [...prev, { sender: 'ai', text: 'Sorry, I encountered an error communicating with the AI gateway.' }]);
+    } catch (error: any) {
+      const isTimeout = error?.name === 'AbortError';
+      console.error('[RTIH AI] Chat error:', error);
+      setChatHistory(prev => [
+        ...prev,
+        {
+          sender: 'ai',
+          text: isTimeout
+            ? '⏱️ The AI took too long to respond. Please try again — the system will automatically try a faster provider.'
+            : '⚠️ Could not reach the AI gateway. Please check your connection and try again. The sandbox fallback will respond if all providers are unavailable.'
+        }
+      ]);
     } finally {
       setIsTyping(false);
     }
@@ -1130,7 +1165,7 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
     e.preventDefault();
     if (!customerInterviewName || !customerInterviewNotes) return;
 
-    alert(`Customer interview with "${customerInterviewName}" logged to research database. Traction and PMF scores recalculated!`);
+    showToast(`Customer interview with "${customerInterviewName}" logged to research database. Traction and PMF scores recalculated!`, 'success');
     setCustomerInterviewName('');
     setCustomerInterviewNotes('');
     
@@ -1173,7 +1208,7 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
       spread: 80,
       origin: { y: 0.6 }
     });
-    alert(`Certificate generated successfully downloaded as PDF.`);
+    showToast(`Certificate generated successfully downloaded as PDF.`, 'success');
   };
 
   // Get active assessment
@@ -1921,7 +1956,7 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
                       
                       // Reload state
                       syncStates();
-                      alert(`Mock ${docItem.type} uploaded successfully! Score recalculation triggered.`);
+                      showToast(`Mock ${docItem.type} uploaded successfully! Score recalculation triggered.`, 'success');
                     };
 
                     return (
@@ -2042,10 +2077,53 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
                               <strong>Suggested Session Focus:</strong> {men.focus}
                             </p>
                             <button 
-                              onClick={() => alert(`Consultation request sent to ${men.name}. A schedule sync invitation will appear in your sessions list.`)}
-                              className="w-full text-center py-1 bg-white hover:bg-slate-50 border border-purple-200 text-purple-700 font-bold rounded text-[10px] mt-1 transition-all"
+                              disabled={requestedMentorId === men.name}
+                              onClick={() => {
+                                if (requestedMentorId === men.name) return;
+                                try {
+                                  const dbInstance = getDb();
+                                  // Find the mentor record by name to get their ID
+                                  const mentorRecord = dbInstance.getMentors().find(m => m.name === men.name);
+                                  const mentorId = mentorRecord?.id || `mentor-${men.name.toLowerCase().replace(/\s/g, '-')}`;
+                                  // Schedule a session 3 days from now at 10:00 AM
+                                  const scheduledDate = new Date();
+                                  scheduledDate.setDate(scheduledDate.getDate() + 3);
+                                  scheduledDate.setHours(10, 0, 0, 0);
+                                  dbInstance.addSession({
+                                    id: `session-req-${Date.now()}`,
+                                    mentorId,
+                                    startupId: startup.id,
+                                    scheduledAt: scheduledDate.toISOString(),
+                                    status: 'Scheduled',
+                                    notes: `Advisory session requested by ${startup.name}. Focus: ${men.focus}`,
+                                    aiSummary: '',
+                                    actionItems: [men.focus]
+                                  });
+                                  // Notify the mentor
+                                  dbInstance.addNotification({
+                                    id: `notif-advisory-${Date.now()}`,
+                                    userId: mentorRecord?.email || men.name,
+                                    type: 'task_verified',
+                                    title: 'Advisory Session Request',
+                                    message: `${startup.name} has requested an advisory session with you. Proposed focus: ${men.focus}. Scheduled in 3 days.`,
+                                    isRead: false,
+                                    createdAt: new Date().toISOString(),
+                                    linkTo: '/mentor'
+                                  });
+                                  setRequestedMentorId(men.name);
+                                  syncStates();
+                                  showToast(`Session request sent to ${men.name}! Scheduled in 3 days. Check your Sessions tab.`, 'success');
+                                } catch (err) {
+                                  showToast('Failed to send session request. Please try again.', 'error');
+                                }
+                              }}
+                              className={`w-full text-center py-1.5 border font-bold rounded text-[10px] mt-1 transition-all ${
+                                requestedMentorId === men.name
+                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-700 cursor-not-allowed'
+                                  : 'bg-white hover:bg-purple-50 border-purple-200 text-purple-700 cursor-pointer'
+                              }`}
                             >
-                              Request Advisory Session
+                              {requestedMentorId === men.name ? '✓ Request Sent' : 'Request Advisory Session'}
                             </button>
                           </div>
                         ))}
@@ -3530,48 +3608,57 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
               </p>
             </div>
 
-            {/* Messages Thread Container */}
-            <div className="h-[360px] overflow-y-auto border border-slate-150 bg-slate-50/30 rounded-xl p-4 space-y-4">
+            {/* Messages Thread Container — newest at bottom, auto-scroll */}
+            <div
+              className="h-[360px] overflow-y-auto border border-slate-150 bg-slate-50/30 rounded-xl p-4 space-y-4 flex flex-col"
+            >
               {(() => {
                 const msgs = db.getMessages(startup.id);
                 if (msgs.length === 0) {
                   return (
-                    <div className="h-full flex items-center justify-center text-slate-400 font-bold text-xs">
+                    <div className="flex-1 flex items-center justify-center text-slate-400 font-bold text-xs">
                       No thread entries logged yet. Initiate discussion below.
                     </div>
                   );
                 }
 
-                // Sort oldest first for thread view
-                msgs.sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
+                // Sort oldest first — newest message renders at the bottom
+                const sorted = [...msgs].sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
 
-                return msgs.map(msg => {
-                  const isSelf = msg.senderId === currentUser?.email;
-                  return (
-                    <div
-                      key={msg.id}
-                      className={`flex flex-col max-w-[80%] ${
-                        isSelf ? 'ml-auto items-end' : 'items-start'
-                      }`}
-                    >
-                      <div className="flex items-baseline gap-1.5 mb-1 px-1">
-                        <span className="text-[9px] font-bold text-slate-800">{msg.senderName}</span>
-                        <span className="text-[8px] font-bold uppercase text-slate-400">({msg.senderRole})</span>
-                        <span className="text-[8px] text-slate-400">
-                          {new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      
-                      <div className={`p-3 rounded-xl text-xs leading-relaxed shadow-sm ${
-                        isSelf 
-                          ? 'bg-emerald-500 text-white rounded-tr-none' 
-                          : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'
-                      }`}>
-                        {msg.content}
-                      </div>
-                    </div>
-                  );
-                });
+                return (
+                  <>
+                    <div className="flex-1" />
+                    {sorted.map(msg => {
+                      const isSelf = msg.senderId === currentUser?.email;
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`flex flex-col max-w-[80%] ${
+                            isSelf ? 'ml-auto items-end' : 'items-start'
+                          }`}
+                        >
+                          <div className="flex items-baseline gap-1.5 mb-1 px-1">
+                            <span className="text-[9px] font-bold text-slate-800">{msg.senderName}</span>
+                            <span className="text-[8px] font-bold uppercase text-slate-400">({msg.senderRole})</span>
+                            <span className="text-[8px] text-slate-400">
+                              {new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          
+                          <div className={`p-3 rounded-xl text-xs leading-relaxed shadow-sm ${
+                            isSelf 
+                              ? 'bg-emerald-500 text-white rounded-tr-none' 
+                              : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'
+                          }`}>
+                            {msg.content}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {/* Scroll anchor — always stays at the very bottom */}
+                    <div ref={messagesEndRef} />
+                  </>
+                );
               })()}
             </div>
 
@@ -4021,10 +4108,10 @@ export default function FounderDashboard({ embedded = false }: { embedded?: bool
                   Evidence URL / Link (Optional)
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   value={milestoneEvidenceUrl}
                   onChange={(e) => setMilestoneEvidenceUrl(e.target.value)}
-                  placeholder="https://github.com/myproject or https://drive.google.com/..."
+                  placeholder="https://github.com/myproject or github.com/myproject"
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 text-slate-800"
                 />
               </div>

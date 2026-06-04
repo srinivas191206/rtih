@@ -255,7 +255,7 @@ export default function ProgramManagerDashboard({ embedded = false }: { embedded
 
   const stats = useMemo(() => {
     return db.getEcosystemStats();
-  }, [db]);
+  }, [db, renderTrigger]);
 
   const cohortStartups = useMemo(() => {
     let list = db.getStartups();
@@ -269,14 +269,14 @@ export default function ProgramManagerDashboard({ embedded = false }: { embedded
       );
     }
     return list;
-  }, [db, selectedSector, selectedDistrict, selectedStage, portfolioSearch]);
+  }, [db, selectedSector, selectedDistrict, selectedStage, portfolioSearch, renderTrigger]);
 
   const highRiskStartups = useMemo(() => {
     return db.getStartups()
       .map(s => ({ startup: s, report: predictStartupRisk(s) }))
       .filter(item => item.report.overallRisk === 'High')
       .slice(0, 5);
-  }, [db]);
+  }, [db, renderTrigger]);
 
   const sectorPieData = useMemo(() => {
     const data: Record<string, number> = {};
@@ -284,7 +284,7 @@ export default function ProgramManagerDashboard({ embedded = false }: { embedded
       data[s.sector] = (data[s.sector] || 0) + 1;
     });
     return Object.entries(data).map(([name, value]) => ({ name, value })).slice(0, 6);
-  }, [db]);
+  }, [db, renderTrigger]);
 
   const districtBarData = useMemo(() => {
     const data: Record<string, number> = {};
@@ -295,7 +295,7 @@ export default function ProgramManagerDashboard({ embedded = false }: { embedded
       name: name.slice(0, 10),
       count
     })).slice(0, 8);
-  }, [db]);
+  }, [db, renderTrigger]);
 
   const activeManagerEmail = useMemo(() => {
     const user = getActiveUser();
@@ -304,7 +304,7 @@ export default function ProgramManagerDashboard({ embedded = false }: { embedded
 
   const pendingRecommendations = useMemo(() => {
     return db.getStageRecommendations().filter(rec => rec.status === 'Pending');
-  }, [db]);
+  }, [db, renderTrigger]);
 
   // Handler for stage promotion approval
   const handleApprovePromotion = (rec: StageRecommendation) => {

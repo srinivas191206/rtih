@@ -363,27 +363,27 @@ export default function MentorDashboard({ embedded = false }: { embedded?: boole
 
   const mentor = useMemo(() => {
     return db.getMentor(selectedMentorId) || db.getMentors()[0];
-  }, [db, selectedMentorId]);
+  }, [db, selectedMentorId, renderTrigger]);
 
   const portfolioStartups = useMemo(() => {
     if (!mentor) return [];
     return mentor.portfolioStartups.map(id => db.getStartup(id)).filter(Boolean) as Startup[];
-  }, [db, mentor]);
+  }, [db, mentor, renderTrigger]);
 
   const sessions = useMemo(() => {
     if (!mentor) return [];
     return db.getSessions().filter(s => s.mentorId === mentor.id);
-  }, [db, mentor]);
+  }, [db, mentor, renderTrigger]);
 
   const mentorshipGoals = useMemo(() => {
     if (!mentor) return [];
     return db.getMentorshipGoals().filter(g => g.mentorId === mentor.id);
-  }, [db, mentor]);
+  }, [db, mentor, renderTrigger]);
 
   const actionItems = useMemo(() => {
     if (!mentor) return [];
     return db.getActionItems().filter(a => a.mentorId === mentor.id);
-  }, [db, mentor]);
+  }, [db, mentor, renderTrigger]);
 
   const chartData = useMemo(() => {
     return portfolioStartups.map(s => ({
@@ -397,7 +397,7 @@ export default function MentorDashboard({ embedded = false }: { embedded?: boole
     return db.getStartups()
       .filter(s => mentor.expertise.includes(s.sector) && !mentor.portfolioStartups.includes(s.id))
       .slice(0, 3);
-  }, [db, mentor]);
+  }, [db, mentor, renderTrigger]);
 
   const submittedMilestones = useMemo(() => {
     if (!portfolioStartups) return [];
@@ -417,15 +417,15 @@ export default function MentorDashboard({ embedded = false }: { embedded?: boole
   // Hackathons & Registrations List for Judging
   const activeHackathon = useMemo(() => {
     return db.getHackathon(selectedHackathonId);
-  }, [db, selectedHackathonId]);
+  }, [db, selectedHackathonId, renderTrigger]);
 
   const hackathonRegistrations = useMemo(() => {
     return db.getRegistrations().filter(r => r.hackathonId === selectedHackathonId);
-  }, [db, selectedHackathonId]);
+  }, [db, selectedHackathonId, renderTrigger]);
 
   const hackathonSubmissions = useMemo(() => {
     return db.getSubmissions().filter(s => s.hackathonId === selectedHackathonId);
-  }, [db, selectedHackathonId]);
+  }, [db, selectedHackathonId, renderTrigger]);
 
   const handleCompleteSession = (sessionId: string) => {
     showToast('Session status marked as Completed. AI meeting summary logged.', 'success');
@@ -584,6 +584,9 @@ export default function MentorDashboard({ embedded = false }: { embedded?: boole
     setIsTyping(true);
 
     try {
+      const controller = new AbortController();
+      const fetchTimeout = setTimeout(() => controller.abort(), 20000);
+
       const response = await fetch('/api/ai/copilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -603,8 +606,11 @@ export default function MentorDashboard({ embedded = false }: { embedded?: boole
             }))
           },
           role: 'Mentor'
-        })
+        }),
+        signal: controller.signal
       });
+      clearTimeout(fetchTimeout);
+
       if (response.ok) {
         const data = await response.json();
         setChatHistory(prev => [...prev, { sender: 'ai', text: data.text }]);
@@ -613,15 +619,25 @@ export default function MentorDashboard({ embedded = false }: { embedded?: boole
           setAiProvider(data.provider);
         }
       } else {
-        throw new Error('API return code ' + response.status);
+        throw new Error(`Server returned ${response.status}`);
       }
-    } catch (error) {
-      console.error('AI chat error:', error);
-      setChatHistory(prev => [...prev, { sender: 'ai', text: 'Sorry, I encountered an error communicating with the AI gateway.' }]);
+    } catch (error: any) {
+      const isTimeout = error?.name === 'AbortError';
+      console.error('[RTIH AI] Mentor chat error:', error);
+      setChatHistory(prev => [
+        ...prev,
+        {
+          sender: 'ai',
+          text: isTimeout
+            ? '⏱️ The AI took too long to respond. Please try again.'
+            : '⚠️ Could not reach the AI gateway. Please check your connection and try again.'
+        }
+      ]);
     } finally {
       setIsTyping(false);
     }
   };
+
 
   return (
     <div className={embedded ? "w-full text-slate-800" : "flex flex-col min-h-screen bg-slate-50"}>

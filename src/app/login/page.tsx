@@ -239,7 +239,7 @@ export default function LoginPage() {
       items: [
         {
           role: 'founder',
-          level: 'Beginner',
+          level: 'Advanced Startup',
           stage: 'Idea Stage',
           name: 'Dr. Srinivas Koppula',
           org: 'Rayalaseema Health Diagnostics',
@@ -250,7 +250,7 @@ export default function LoginPage() {
         },
         {
           role: 'founder',
-          level: 'Intermediate',
+          level: 'Medium Level Startup',
           stage: 'Validation & Prototype',
           name: 'Kalyani Devineni',
           org: 'Godavari Aquatech Labs',
@@ -261,7 +261,7 @@ export default function LoginPage() {
         },
         {
           role: 'founder',
-          level: 'Pro',
+          level: 'Beginner Startup',
           stage: 'Scale & Revenue',
           name: 'Hari Prasad Ananth',
           org: 'Kalyan AgriSystems',
@@ -431,7 +431,7 @@ export default function LoginPage() {
                 {group.group}
               </h4>
               <div className="grid grid-cols-1 gap-2.5">
-                {group.items.map((item, idx) => (
+                  {group.items.map((item, idx) => (
                   <button
                     key={idx}
                     onClick={() => {
@@ -457,18 +457,22 @@ export default function LoginPage() {
                           {item.name}
                         </span>
                         
-                        {/* Custom role badge */}
-                        <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${
-                          item.role === 'admin' 
-                            ? 'bg-red-50 text-red-700' 
-                            : item.role === 'manager' 
-                              ? 'bg-orange-50 text-orange-700' 
-                              : item.role === 'mentor' 
-                                ? 'bg-purple-55 text-purple-700' 
-                                : 'bg-emerald-55 text-emerald-700'
-                        }`}>
-                          {item.role === 'founder' ? (item as any).level : item.role}
-                        </span>
+                        {/* Badge: numbered for founders, role label for others */}
+                        {item.role === 'founder' ? (
+                          <span className="w-5 h-5 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black">
+                            {idx + 1}
+                          </span>
+                        ) : (
+                          <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${
+                            item.role === 'admin' 
+                              ? 'bg-red-50 text-red-700' 
+                              : item.role === 'manager' 
+                                ? 'bg-orange-50 text-orange-700' 
+                                : 'bg-purple-55 text-purple-700'
+                          }`}>
+                            {item.role}
+                          </span>
+                        )}
                       </div>
 
                       <div className="text-[10px] font-bold text-slate-500 flex items-center gap-1.5">

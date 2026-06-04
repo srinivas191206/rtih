@@ -59,6 +59,7 @@ export default function AdminCommandCenter({ embedded = false }: { embedded?: bo
   const [db, setDb] = useState(() => getDb());
   const [execActive, setExecActive] = useState(false);
   const [demoActive, setDemoActive] = useState(false);
+  const [renderTrigger, setRenderTrigger] = useState(0);
 
   // Tab State
   const [activeTab, setActiveTab] = useState<'analytics' | 'leaderboard' | 'hackathons' | 'compliance' | 'applications' | 'departments' | 'configurator'>('analytics');
@@ -137,6 +138,7 @@ export default function AdminCommandCenter({ embedded = false }: { embedded?: bo
     setExecActive(isExecutiveModeActive());
     setDemoActive(isDemoModeActive());
     setWeights(freshDb.getHealthWeights());
+    setRenderTrigger(prev => prev + 1);
   };
 
   useEffect(() => {
@@ -150,7 +152,7 @@ export default function AdminCommandCenter({ embedded = false }: { embedded?: bo
   // Aggregate stats dynamically
   const stats = useMemo(() => {
     return db.getEcosystemStats();
-  }, [db]);
+  }, [db, renderTrigger]);
 
   // Compute Unicorn Candidates
   const unicornStartups = useMemo(() => {
@@ -158,7 +160,7 @@ export default function AdminCommandCenter({ embedded = false }: { embedded?: bo
       .filter(s => s.unicornScore > 70)
       .sort((a, b) => b.unicornScore - a.unicornScore)
       .slice(0, 5);
-  }, [db]);
+  }, [db, renderTrigger]);
 
   // Compute Soonicorn Candidates
   const soonicornStartups = useMemo(() => {
@@ -166,7 +168,7 @@ export default function AdminCommandCenter({ embedded = false }: { embedded?: bo
       .filter(s => s.soonicornScore > 75 && s.unicornScore <= 70)
       .sort((a, b) => b.soonicornScore - a.soonicornScore)
       .slice(0, 5);
-  }, [db]);
+  }, [db, renderTrigger]);
 
   // Seed projections
   const projectionData = [
@@ -181,17 +183,17 @@ export default function AdminCommandCenter({ embedded = false }: { embedded?: bo
   // Universities ranked
   const universitiesList = useMemo(() => {
     return [...db.getUniversities()].sort((a, b) => b.innovationScore - a.innovationScore);
-  }, [db]);
+  }, [db, renderTrigger]);
 
   // Hackathons Hub data
   const hackathonsList = useMemo(() => {
     return db.getHackathons();
-  }, [db]);
+  }, [db, renderTrigger]);
 
   // Mentors list for judge selection
   const mentorsList = useMemo(() => {
     return db.getMentors();
-  }, [db]);
+  }, [db, renderTrigger]);
 
   // Filtered applications
   const filteredApps = useMemo(() => {
@@ -205,7 +207,7 @@ export default function AdminCommandCenter({ embedded = false }: { embedded?: bo
         app.district.toLowerCase().includes(appSearch.toLowerCase());
       return matchesStatus && matchesSearch;
     });
-  }, [db, appStatusFilter, appSearch]);
+  }, [db, appStatusFilter, appSearch, renderTrigger]);
 
   // Filtered startups for compliance audits
   const complianceStartups = useMemo(() => {
@@ -222,7 +224,7 @@ export default function AdminCommandCenter({ embedded = false }: { embedded?: bo
       const matchesRisk = complianceRiskFilter === 'All' || item.riskReport.overallRisk === complianceRiskFilter;
       return matchesSearch && matchesRisk;
     });
-  }, [db, complianceSearch, complianceRiskFilter]);
+  }, [db, complianceSearch, complianceRiskFilter, renderTrigger]);
 
   // Hackathon creator action
   const handleCreateHackathon = (e: React.FormEvent) => {

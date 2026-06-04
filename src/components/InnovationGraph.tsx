@@ -114,12 +114,14 @@ export default function InnovationGraph() {
   const [selectedDistrict, setSelectedDistrict] = useState<string>('Visakhapatnam');
   const [activeNode, setActiveNode] = useState<{ label: string; type: string; details: string } | null>(null);
   const [db, setDb] = useState(() => getDb());
+  const [renderTrigger, setRenderTrigger] = useState(0);
 
   // Listen to global Demo Mode updates
   useEffect(() => {
     setDb(getDb());
     const handleModeChange = () => {
       setDb(getDb());
+      setRenderTrigger(prev => prev + 1);
     };
     window.addEventListener('rtih_mode_change', handleModeChange);
     return () => {
@@ -264,7 +266,7 @@ export default function InnovationGraph() {
       console.error(e);
       return { nodes: [], edges: [] };
     }
-  }, [db, selectedDistrict]);
+  }, [db, selectedDistrict, renderTrigger]);
 
   const onNodeClick = (_: any, node: Node) => {
     const id = node.id;

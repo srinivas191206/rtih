@@ -1794,8 +1794,6 @@ export class MockDatabase {
 
 
   constructor() {
-    const demoMode = true;
-    
     if (typeof window !== 'undefined') {
       const cached = localStorage.getItem(MockDatabase.STORAGE_KEY);
       if (cached) {
@@ -1832,35 +1830,13 @@ export class MockDatabase {
           if (!this.data.actionItems) this.data.actionItems = [];
           if (!this.data.mentorMatches) this.data.mentorMatches = [];
           
-          // Force reset Rayalaseema EV-Drive (startup-1) to its base state
-          const sIdx = this.data.startups.findIndex(s => s.id === 'startup-1');
-          if (sIdx !== -1) {
-            this.data.startups[sIdx].stage = 'idea';
-            this.data.startups[sIdx].tagline = 'Modular EV conversions and swappable drivetrains for rural transport. Incubated in Ananthapuramu.';
-            this.data.startups[sIdx].description = 'Modular EV conversions and swappable drivetrains for rural transport. Incubated in Ananthapuramu.';
-            this.data.startups[sIdx].monthlyRevenue = 0;
-            this.data.startups[sIdx].totalFunding = 0;
-            this.data.startups[sIdx].activeUsers = 0;
-            this.data.startups[sIdx].jobsCreated = 2;
-            this.data.startups[sIdx].healthScore = 63;
-            this.data.startups[sIdx].healthBreakdown = { team: 85, product: 40, market: 70, traction: 15, revenue: 0, mentorship: 90, execution: 50 };
-            this.data.startups[sIdx].milestones = [
-              { id: 'milestone-0-1', title: 'Formulate battery pack housing specs', description: 'Determine dimensions for regional auto-rickshaws conversions.', status: 'Pending', targetDate: '2026-06-30' },
-              { id: 'milestone-0-2', title: 'Apply for AP Innovation Grant', description: 'Submit EV conversions proof-of-concept design sheets.', status: 'Pending', targetDate: '2026-07-15' },
-              { id: 'milestone-0-3', title: 'Establish JNTU incubation lab access', description: 'Acquire official workspace and testing bench clearance.', status: 'Pending', targetDate: '2026-08-01' }
-            ];
-            
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-            this.data.startups[sIdx].tractionHistory = months.map(month => ({
-              month,
-              revenue: 0,
-              users: 0,
-              jobs: 2
-            }));
-          }
-          this.save();
-          
+          // NOTE: Do NOT force-reset startup-1 milestones here — doing so would wipe
+          // submitted evidence on every page load. Seed data resets only happen above
+          // when the startup name is missing (brand-new install).
+
           setTimeout(() => { this.syncWithBackend(); }, 500);
+          setInterval(() => { this.syncWithBackend(true); }, 8000);
+          setTimeout(() => { this.subscribeToRealtime(); }, 1000);
           return;
         } catch (e) {
           console.error(e);
@@ -1871,6 +1847,31 @@ export class MockDatabase {
     this.save(true);
     if (typeof window !== 'undefined') {
       setTimeout(() => { this.syncWithBackend(); }, 500);
+      setInterval(() => { this.syncWithBackend(true); }, 8000);
+      setTimeout(() => { this.subscribeToRealtime(); }, 1000);
+    }
+  }
+
+  private async subscribeToRealtime() {
+    if (typeof window === 'undefined') return;
+    try {
+      const { isSupabaseConfigured, getSupabaseClient } = await import('./db');
+      if (!isSupabaseConfigured()) return;
+      const supabase = getSupabaseClient();
+      supabase
+        .channel('rtih-realtime-all')
+        .on(
+          'postgres_changes' as any,
+          { event: '*', schema: 'public' },
+          () => {
+            // Any DB change on another device/tab → immediately pull fresh state
+            this.syncWithBackend(true);
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      // Realtime not available, polling fallback still active
+      console.warn('[RTIH] Realtime subscription failed, falling back to 8s polling:', e);
     }
   }
 
@@ -1904,38 +1905,48 @@ export class MockDatabase {
     }
   }
 
-  async syncWithBackend() {
+  async syncWithBackend(silent = false) {
     if (typeof window === 'undefined') return;
     try {
       const { isSupabaseConfigured, supabasePullAll, supabaseSeedAll } = await import('./db');
       if (!isSupabaseConfigured()) {
-        console.log('[RTIH] Supabase not configured. Running in LocalStorage Mode.');
+        if (!silent) console.log('[RTIH] Supabase not configured. Running in LocalStorage Mode.');
         return;
       }
 
-      console.log('[RTIH] Connecting to Supabase...');
+      if (!silent) console.log('[RTIH] Connecting to Supabase...');
       const pulled = await supabasePullAll();
 
       if (!pulled.startups || pulled.startups.length === 0) {
         // Tables are empty — seed from local mock data
-        console.log('[RTIH] Supabase tables are empty. Seeding with pre-scaled mock data...');
+        if (!silent) console.log('[RTIH] Supabase tables are empty. Seeding with pre-scaled mock data...');
         await supabaseSeedAll(this.data as any);
-        console.log('[RTIH] ✅ Supabase seeding completed successfully!');
+        if (!silent) console.log('[RTIH] ✅ Supabase seeding completed successfully!');
       } else {
         // Hydrate in-memory state from Supabase
-        console.log('[RTIH] ✅ Synchronized state from live Supabase database.');
+        if (!silent) console.log('[RTIH] ✅ Synchronized state from live Supabase database.');
         const keys = Object.keys(pulled) as string[];
+        let hasChanges = false;
+
         for (const key of keys) {
           const arr = pulled[key];
           if (Array.isArray(arr) && arr.length > 0 && (this.data as any)[key]) {
-            (this.data as any)[key] = arr;
+            const oldStr = JSON.stringify((this.data as any)[key]);
+            const newStr = JSON.stringify(arr);
+            if (oldStr !== newStr) {
+              (this.data as any)[key] = arr;
+              hasChanges = true;
+            }
           }
         }
-        this.save(true);
-        window.dispatchEvent(new Event('rtih_mode_change'));
+
+        if (hasChanges) {
+          this.save(true);
+          window.dispatchEvent(new Event('rtih_mode_change'));
+        }
       }
     } catch (e) {
-      console.warn('[RTIH] Supabase sync failed, running in offline LocalStorage mode:', e);
+      if (!silent) console.warn('[RTIH] Supabase sync failed, running in offline LocalStorage mode:', e);
     }
   }
 
@@ -1947,9 +1958,17 @@ export class MockDatabase {
 
       const oldData = JSON.parse(oldStr as string);
       const collections = [
-        'startups', 'founders', 'applications', 'tasks', 'notifications',
-        'messages', 'documents', 'stageRecommendations', 'jobPostings',
-        'mentorshipGoals', 'actionItems', 'sessions', 'departments', 'programs'
+        // Core entities
+        'startups', 'founders', 'mentors', 'investors', 'universities', 'outposts',
+        // Incubation & management
+        'applications', 'incubationCenters', 'departments', 'programs',
+        'tasks', 'notifications', 'messages', 'documents',
+        'stageRecommendations', 'jobPostings', 'mentorshipGoals', 'actionItems',
+        // Academic & events
+        'sessions', 'hackathons', 'registrations', 'submissions',
+        // Alumni & community
+        'certifications', 'watchlists', 'assessments',
+        'alumniStartups', 'ideaPosts', 'citizenProfiles',
       ];
 
       for (const key of collections) {

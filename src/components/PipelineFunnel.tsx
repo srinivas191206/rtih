@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { getDb, StartupStage, Startup } from '@/lib/mockDb';
 import { Filter, Users, TrendingUp, Sparkles, FolderKanban } from 'lucide-react';
 
@@ -17,6 +17,17 @@ const STAGE_CONFIG: { stage: StartupStage; label: string; color: string; desc: s
 
 export default function PipelineFunnel() {
   const [selectedStage, setSelectedStage] = useState<StartupStage>('mvp');
+  const [renderTrigger, setRenderTrigger] = useState(0);
+
+  useEffect(() => {
+    const handleSync = () => {
+      setRenderTrigger(prev => prev + 1);
+    };
+    window.addEventListener('rtih_mode_change', handleSync);
+    return () => {
+      window.removeEventListener('rtih_mode_change', handleSync);
+    };
+  }, []);
 
   // Compute funnel aggregates dynamically from the mock database
   const funnelData = useMemo(() => {
@@ -44,7 +55,7 @@ export default function PipelineFunnel() {
       console.error(e);
       return {} as Record<StartupStage, number>;
     }
-  }, []);
+  }, [renderTrigger]);
 
   const totalStartups = useMemo(() => {
     return Object.values(funnelData).reduce((sum, count) => sum + count, 0);
@@ -58,7 +69,7 @@ export default function PipelineFunnel() {
       console.error(e);
       return [];
     }
-  }, [selectedStage]);
+  }, [selectedStage, renderTrigger]);
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">

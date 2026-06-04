@@ -1,11 +1,23 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { getDb } from '@/lib/mockDb';
 import { Heart, Users, Target, ShieldCheck, Landmark } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function FamilyTracker() {
+  const [renderTrigger, setRenderTrigger] = useState(0);
+
+  useEffect(() => {
+    const handleSync = () => {
+      setRenderTrigger(prev => prev + 1);
+    };
+    window.addEventListener('rtih_mode_change', handleSync);
+    return () => {
+      window.removeEventListener('rtih_mode_change', handleSync);
+    };
+  }, []);
+
   const stats = useMemo(() => {
     try {
       return getDb().getEcosystemStats();
@@ -13,7 +25,7 @@ export default function FamilyTracker() {
       console.error(e);
       return null;
     }
-  }, []);
+  }, [renderTrigger]);
 
   const chartData = useMemo(() => {
     if (!stats) return [];

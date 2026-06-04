@@ -1,7 +1,7 @@
 // src/lib/db.ts — Supabase integration layer for RTIH InnovationOS
 // Uses JSONB-based universal table pattern: each table has (id TEXT, data JSONB)
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -10,8 +10,18 @@ export function isSupabaseConfigured(): boolean {
   return !!(SUPABASE_URL && SUPABASE_ANON_KEY);
 }
 
-function getClient() {
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Singleton client — reused for both queries and realtime subscriptions
+let _client: SupabaseClient | null = null;
+function getClient(): SupabaseClient {
+  if (!_client) {
+    _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+  return _client;
+}
+
+/** Exported so other modules (e.g. mockDb) can subscribe to Realtime channels. */
+export function getSupabaseClient(): SupabaseClient {
+  return getClient();
 }
 
 // ─────────────────────────────────────────────────────────────────────
