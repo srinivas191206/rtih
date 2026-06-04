@@ -15,7 +15,8 @@ import {
   Award,
   Sparkles,
   Building,
-  User
+  User,
+  Landmark
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -491,7 +492,9 @@ export default function LoginPage() {
                           ? 'bg-orange-500' 
                           : item.role === 'mentor' 
                             ? 'bg-purple-500' 
-                            : 'bg-emerald-500'
+                            : item.role === 'investor'
+                              ? 'bg-blue-600'
+                              : 'bg-emerald-500'
                     }`}></div>
 
                     <div className="pl-2 space-y-1">
@@ -511,7 +514,9 @@ export default function LoginPage() {
                               ? 'bg-red-50 text-red-700' 
                               : item.role === 'manager' 
                                 ? 'bg-orange-50 text-orange-700' 
-                                : 'bg-purple-55 text-purple-700'
+                                : item.role === 'investor'
+                                  ? 'bg-blue-50 text-blue-700'
+                                  : 'bg-purple-55 text-purple-700'
                           }`}>
                             {item.role}
                           </span>
@@ -522,6 +527,7 @@ export default function LoginPage() {
                         {item.role === 'founder' && <Building className="w-3.5 h-3.5 text-slate-400" />}
                         {item.role === 'mentor' && <Sparkles className="w-3.5 h-3.5 text-slate-400" />}
                         {(item.role === 'admin' || item.role === 'manager') && <User className="w-3.5 h-3.5 text-slate-400" />}
+                        {item.role === 'investor' && <Landmark className="w-3.5 h-3.5 text-slate-400" />}
                         <span>{item.org}</span>
                       </div>
 
