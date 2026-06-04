@@ -26,9 +26,9 @@ const GROQ_KEYS: string[] = Array.from(new Set([
 ].filter(Boolean).filter(isValidGroqKey))) as string[];
 
 function getActiveProvider() {
+  if (GROQ_KEYS.length > 0) return 'Groq';
   if (isValidGeminiKey(process.env.GEMINI_API_KEY)) return 'Google Gemini';
   if (isValidOpenRouterKey(process.env.OPENROUTER_API_KEY)) return 'OpenRouter';
-  if (GROQ_KEYS.length > 0) return 'Groq';
   return null;
 }
 
@@ -46,7 +46,6 @@ export async function POST(request: Request) {
 
     const geminiKey = process.env.GEMINI_API_KEY;
     const openrouterKey = process.env.OPENROUTER_API_KEY;
-    const groqKey = process.env.GROQ_API_KEY;
 
     // Standard instruction system prompt matching the CPO/Y Combinator persona
     const systemInstruction = `
@@ -58,7 +57,47 @@ export async function POST(request: Request) {
       Role context: ${role || 'Founder'}
     `;
 
-    // 1. Try Native Gemini API if key is valid
+    // 1. Try Groq API first (iterating over the list of valid Groq keys for automatic failover)
+    for (let i = 0; i < GROQ_KEYS.length; i++) {
+      const activeGroqKey = GROQ_KEYS[i];
+      try {
+        console.log(`[RTIH AI] Trying Groq Key ${i + 1}/${GROQ_KEYS.length}...`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12000);
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${activeGroqKey}`
+          },
+          body: JSON.stringify({
+            model: 'llama-3.1-8b-instant',
+            messages: [
+              { role: 'system', content: systemInstruction },
+              { role: 'user', content: prompt }
+            ]
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+
+        if (response.ok) {
+          const data = await response.json();
+          const text = data.choices?.[0]?.message?.content;
+          if (text) {
+            console.log(`[RTIH AI] Groq Key ${i + 1} responded successfully.`);
+            return NextResponse.json({ text, isLive: true, provider: `Groq (Key ${i + 1})` });
+          }
+        } else {
+          const errText = await response.text();
+          console.error(`[RTIH AI] Groq Key ${i + 1} non-200:`, response.status, errText);
+        }
+      } catch (groqError: any) {
+        console.error(`[RTIH AI] Groq Key ${i + 1} failed:`, groqError?.message || groqError);
+      }
+    }
+
+    // 2. Try Native Gemini API as fallback if key is valid
     if (isValidGeminiKey(geminiKey)) {
       try {
         console.log('[RTIH AI] Trying Google Gemini...');
@@ -79,7 +118,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 2. Try OpenRouter API if key is valid
+    // 3. Try OpenRouter API as third fallback if key is valid
     if (isValidOpenRouterKey(openrouterKey)) {
       try {
         console.log('[RTIH AI] Trying OpenRouter...');
@@ -117,46 +156,6 @@ export async function POST(request: Request) {
         }
       } catch (orError: any) {
         console.error('[RTIH AI] OpenRouter failed:', orError?.message || orError);
-      }
-    }
-
-    // 3. Try Groq API (iterating over the list of valid Groq keys for automatic failover)
-    for (let i = 0; i < GROQ_KEYS.length; i++) {
-      const activeGroqKey = GROQ_KEYS[i];
-      try {
-        console.log(`[RTIH AI] Trying Groq Key ${i + 1}/${GROQ_KEYS.length}...`);
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 12000);
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${activeGroqKey}`
-          },
-          body: JSON.stringify({
-            model: 'llama-3.1-8b-instant',
-            messages: [
-              { role: 'system', content: systemInstruction },
-              { role: 'user', content: prompt }
-            ]
-          }),
-          signal: controller.signal
-        });
-        clearTimeout(timeout);
-
-        if (response.ok) {
-          const data = await response.json();
-          const text = data.choices?.[0]?.message?.content;
-          if (text) {
-            console.log(`[RTIH AI] Groq Key ${i + 1} responded successfully.`);
-            return NextResponse.json({ text, isLive: true, provider: `Groq (Key ${i + 1})` });
-          }
-        } else {
-          const errText = await response.text();
-          console.error(`[RTIH AI] Groq Key ${i + 1} non-200:`, response.status, errText);
-        }
-      } catch (groqError: any) {
-        console.error(`[RTIH AI] Groq Key ${i + 1} failed:`, groqError?.message || groqError);
       }
     }
 
