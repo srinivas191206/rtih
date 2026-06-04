@@ -49,27 +49,9 @@ export default function RegisterPage() {
   };
 
   const validate = () => {
-    const e: Record<string, string> = {};
-    if (step === 1) {
-      if (!form.founderName.trim()) e.founderName = 'Required';
-      if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) e.email = 'Valid email required';
-      if (!form.phone.trim()) e.phone = 'Required';
-      if (!form.district) e.district = 'Required';
-      if (!form.background.trim()) e.background = 'Required';
-    }
-    if (step === 2) {
-      if (!form.startupName.trim()) e.startupName = 'Required';
-      if (!form.tagline.trim()) e.tagline = 'Required';
-      if (!form.sector) e.sector = 'Required';
-    }
-    if (step === 3) {
-      if (!form.problemStatement.trim()) e.problemStatement = 'Required (min 50 chars)';
-      if (form.problemStatement.trim().length < 50) e.problemStatement = 'Please describe in at least 50 characters';
-      if (!form.solution.trim()) e.solution = 'Required (min 50 chars)';
-      if (form.solution.trim().length < 50) e.solution = 'Please describe in at least 50 characters';
-    }
-    setErrors(e);
-    return Object.keys(e).length === 0;
+    // All fields are optional to allow quick testing/skipping
+    setErrors({});
+    return true;
   };
 
   const next = () => { if (validate()) setStep(s => s + 1); };
@@ -80,23 +62,23 @@ export default function RegisterPage() {
     const id = `app-${Date.now()}`;
     db.submitApplication({
       id,
-      founderName: form.founderName,
-      email: form.email,
-      phone: form.phone,
-      district: form.district,
-      background: form.background,
-      education: form.education,
-      startupName: form.startupName,
-      tagline: form.tagline,
-      sector: form.sector,
-      stage: form.stage,
-      problemStatement: form.problemStatement,
-      solution: form.solution,
-      teamSize: Number(form.teamSize),
-      coFounders: form.coFounders,
-      pitchDeckUrl: form.pitchDeckUrl,
-      prototypeUrl: form.prototypeUrl,
-      businessPlanUrl: form.businessPlanUrl,
+      founderName: form.founderName.trim() || 'Test Founder',
+      email: form.email.trim() || `test-${Date.now()}@test.com`,
+      phone: form.phone.trim() || '9999999999',
+      district: form.district || DISTRICTS[0] || 'Visakhapatnam',
+      background: form.background.trim() || 'Test founder professional background',
+      education: form.education.trim() || 'B.Tech Graduate',
+      startupName: form.startupName.trim() || 'Test Venture',
+      tagline: form.tagline.trim() || 'Testing and prototyping innovation',
+      sector: form.sector || SECTORS[0] || 'MedTech',
+      stage: form.stage || 'Idea',
+      problemStatement: form.problemStatement.trim() || 'This is a test problem statement that meets all length requirement fallbacks for test submissions.',
+      solution: form.solution.trim() || 'This is a test solution statement describing unique technological innovations and value propositions.',
+      teamSize: Number(form.teamSize) || 1,
+      coFounders: form.coFounders.trim() || 'Partner 1 - CTO',
+      pitchDeckUrl: form.pitchDeckUrl.trim() || 'https://drive.google.com/test-pitch-deck',
+      prototypeUrl: form.prototypeUrl.trim() || 'https://test-prototype.com',
+      businessPlanUrl: form.businessPlanUrl.trim() || 'https://test-biz-plan.com',
       submittedAt: new Date().toISOString(),
       status: 'Pending',
     });
@@ -174,22 +156,22 @@ export default function RegisterPage() {
           {/* Step 1: Founder Info */}
           {step === 1 && (
             <div className="space-y-4">
-              <Field label="Full Name *" error={errors.founderName}>
+              <Field label="Full Name" error={errors.founderName}>
                 <input className={input(errors.founderName)} value={form.founderName} onChange={e => update('founderName', e.target.value)} placeholder="e.g. Srinivas Reddy" />
               </Field>
-              <Field label="Email Address *" error={errors.email}>
+              <Field label="Email Address" error={errors.email}>
                 <input className={input(errors.email)} type="email" value={form.email} onChange={e => update('email', e.target.value)} placeholder="founder@startup.in" />
               </Field>
-              <Field label="Mobile Number *" error={errors.phone}>
+              <Field label="Mobile Number" error={errors.phone}>
                 <input className={input(errors.phone)} value={form.phone} onChange={e => update('phone', e.target.value)} placeholder="+91 9876543210" />
               </Field>
-              <Field label="District *" error={errors.district}>
+              <Field label="District" error={errors.district}>
                 <select className={input(errors.district)} value={form.district} onChange={e => update('district', e.target.value)}>
                   <option value="">Select district</option>
                   {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </Field>
-              <Field label="Professional Background *" error={errors.background}>
+              <Field label="Professional Background" error={errors.background}>
                 <textarea className={input(errors.background) + ' h-20 resize-none'} value={form.background} onChange={e => update('background', e.target.value)} placeholder="Briefly describe your professional background" />
               </Field>
               <Field label="Education Qualification">
@@ -201,19 +183,19 @@ export default function RegisterPage() {
           {/* Step 2: Startup Details */}
           {step === 2 && (
             <div className="space-y-4">
-              <Field label="Startup Name *" error={errors.startupName}>
+              <Field label="Startup Name" error={errors.startupName}>
                 <input className={input(errors.startupName)} value={form.startupName} onChange={e => update('startupName', e.target.value)} placeholder="e.g. AgriVision AI" />
               </Field>
-              <Field label="Tagline *" error={errors.tagline}>
+              <Field label="Tagline" error={errors.tagline}>
                 <input className={input(errors.tagline)} value={form.tagline} onChange={e => update('tagline', e.target.value)} placeholder="One line that describes your startup" />
               </Field>
-              <Field label="Sector / Domain *" error={errors.sector}>
+              <Field label="Sector / Domain" error={errors.sector}>
                 <select className={input(errors.sector)} value={form.sector} onChange={e => update('sector', e.target.value)}>
                   <option value="">Select sector</option>
                   {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </Field>
-              <Field label="Current Stage *">
+              <Field label="Current Stage">
                 <div className="grid grid-cols-3 gap-2">
                   {STAGES.map(s => (
                     <button
@@ -235,23 +217,21 @@ export default function RegisterPage() {
           {/* Step 3: Problem & Solution */}
           {step === 3 && (
             <div className="space-y-4">
-              <Field label="Problem Statement * (min 50 characters)" error={errors.problemStatement}>
+              <Field label="Problem Statement" error={errors.problemStatement}>
                 <textarea
                   className={input(errors.problemStatement) + ' h-32 resize-none'}
                   value={form.problemStatement}
                   onChange={e => update('problemStatement', e.target.value)}
                   placeholder="Describe the problem you are solving in detail..."
                 />
-                <p className="text-[10px] text-slate-400 mt-1">{form.problemStatement.length} characters</p>
               </Field>
-              <Field label="Your Solution * (min 50 characters)" error={errors.solution}>
+              <Field label="Your Solution" error={errors.solution}>
                 <textarea
                   className={input(errors.solution) + ' h-32 resize-none'}
                   value={form.solution}
                   onChange={e => update('solution', e.target.value)}
                   placeholder="Describe your proposed solution, technology, and why it's unique..."
                 />
-                <p className="text-[10px] text-slate-400 mt-1">{form.solution.length} characters</p>
               </Field>
             </div>
           )}
@@ -259,7 +239,7 @@ export default function RegisterPage() {
           {/* Step 4: Team & Documents */}
           {step === 4 && (
             <div className="space-y-4">
-              <Field label="Team Size *">
+              <Field label="Team Size">
                 <input type="number" min={1} max={50} className={input('')} value={form.teamSize} onChange={e => update('teamSize', e.target.value)} />
               </Field>
               <Field label="Co-Founders (names & roles)">
