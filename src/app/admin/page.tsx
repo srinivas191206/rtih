@@ -54,7 +54,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import confetti from 'canvas-confetti';
 import { showToast } from '@/lib/toast';
 
-export default function AdminCommandCenter() {
+export default function AdminCommandCenter({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const [db, setDb] = useState(() => getDb());
   const [execActive, setExecActive] = useState(false);
@@ -381,10 +381,10 @@ export default function AdminCommandCenter() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 text-slate-800">
-      <Navigation />
+    <div className={embedded ? "w-full text-slate-800" : "flex flex-col min-h-screen bg-slate-50 text-slate-800"}>
+      {!embedded && <Navigation />}
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+      <main className={embedded ? "w-full py-4 space-y-10" : "flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-10"}>
         
         {/* Banner Title */}
         <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
@@ -1966,14 +1966,16 @@ export default function AdminCommandCenter() {
       )}
 
       {/* Gov footer */}
-      <footer className="border-t border-slate-200 bg-white py-8 text-center text-xs text-slate-450 mt-10">
-        <p className="font-medium text-slate-650 text-center">
-          Andhra Pradesh Innovation Command Center • RTIH
-        </p>
-        <p className="mt-2 text-[10px] text-center">
-          Secure executive telemetry access. Compiled in accordance with AP Startup Policy guidelines.
-        </p>
-      </footer>
+      {!embedded && (
+        <footer className="border-t border-slate-200 bg-white py-8 text-center text-xs text-slate-450 mt-10">
+          <p className="font-medium text-slate-650 text-center">
+            Andhra Pradesh Innovation Command Center • RTIH
+          </p>
+          <p className="mt-2 text-[10px] text-center">
+            Secure executive telemetry access. Compiled in accordance with AP Startup Policy guidelines.
+          </p>
+        </footer>
+      )}
     </div>
   );
 }

@@ -12,7 +12,8 @@ import {
   getActiveUser,
   Hackathon,
   HackathonRegistration,
-  HackathonSubmission
+  HackathonSubmission,
+  Message
 } from '@/lib/mockDb';
 import { calculateVentureHealth } from '@/lib/engines';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -40,19 +41,85 @@ import {
 import confetti from 'canvas-confetti';
 import { showToast } from '@/lib/toast';
 
-export default function MentorDashboard() {
+// Helper functions for rendering Markdown in chatbot messages
+const parseInlineMarkdown = (text: string) => {
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={idx} className="font-extrabold text-slate-900">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={idx} className="italic text-slate-800">{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+};
+
+const renderMarkdown = (text: string) => {
+  const lines = text.split('\n');
+  return lines.map((line, lineIdx) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      return <div key={lineIdx} className="h-2" />;
+    }
+
+    if (trimmed.startsWith('### ')) {
+      const headingText = trimmed.replace('### ', '');
+      return (
+        <h4 key={lineIdx} className="text-xs font-black text-slate-900 mt-2.5 mb-1.5 flex items-center gap-1">
+          {parseInlineMarkdown(headingText)}
+        </h4>
+      );
+    }
+
+    if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+      const bulletText = trimmed.substring(2);
+      return (
+        <div key={lineIdx} className="flex items-start gap-1.5 pl-2 my-0.5 text-xs text-slate-700 leading-relaxed">
+          <span className="text-emerald-500 font-bold text-sm leading-none">•</span>
+          <span className="flex-1">{parseInlineMarkdown(bulletText)}</span>
+        </div>
+      );
+    }
+
+    const matchNumbered = trimmed.match(/^(\d+)\.\s(.*)/);
+    if (matchNumbered) {
+      const num = matchNumbered[1];
+      const itemText = matchNumbered[2];
+      return (
+        <div key={lineIdx} className="flex items-start gap-1.5 pl-2 my-0.5 text-xs text-slate-700 leading-relaxed">
+          <span className="text-emerald-600 font-bold leading-none">{num}.</span>
+          <span className="flex-1">{parseInlineMarkdown(itemText)}</span>
+        </div>
+      );
+    }
+
+    return (
+      <p key={lineIdx} className="text-xs text-slate-700 my-1 leading-relaxed">
+        {parseInlineMarkdown(line)}
+      </p>
+    );
+  });
+};
+
+export default function MentorDashboard({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const [selectedMentorId, setSelectedMentorId] = useState<string>('mentor-1');
   const [db, setDb] = useState(() => getDb());
   const [execActive, setExecActive] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [renderTrigger, setRenderTrigger] = useState(0);
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<'portfolio' | 'goals' | 'tasks' | 'sessions' | 'promotions' | 'judging' | 'copilot'>('portfolio');
+  const [activeTab, setActiveTab] = useState<'portfolio' | 'goals' | 'tasks' | 'communications' | 'sessions' | 'promotions' | 'judging' | 'copilot'>('portfolio');
+
+  // Chat / Communications state
+  const [activeChatStartupId, setActiveChatStartupId] = useState<string | null>(null);
+  const [chatMessageContent, setChatMessageContent] = useState('');
 
   // Tab grouping helpers
-  const getPrimaryTab = (subTab: 'portfolio' | 'goals' | 'tasks' | 'sessions' | 'promotions' | 'judging' | 'copilot') => {
-    if (['portfolio', 'goals', 'tasks'].includes(subTab)) return 'portfolio_tasks';
+  const getPrimaryTab = (subTab: 'portfolio' | 'goals' | 'tasks' | 'communications' | 'sessions' | 'promotions' | 'judging' | 'copilot') => {
+    if (['portfolio', 'goals', 'tasks', 'communications'].includes(subTab)) return 'portfolio_tasks';
     if (['sessions', 'promotions'].includes(subTab)) return 'sessions_promotions';
     if (subTab === 'judging') return 'judging';
     if (subTab === 'copilot') return 'copilot';
@@ -244,6 +311,7 @@ export default function MentorDashboard() {
   const syncStates = () => {
     setDb(getDb());
     setExecActive(isExecutiveModeActive());
+    setRenderTrigger(prev => prev + 1);
   };
 
   // Login check and context lock
@@ -376,6 +444,59 @@ export default function MentorDashboard() {
     setEvaluationStartupId('');
   };
 
+  const handleSendChatMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeChatStartupId || !chatMessageContent.trim()) return;
+
+    const newMessage: Message = {
+      id: `msg-${Date.now()}`,
+      startupId: activeChatStartupId,
+      senderId: mentor.email,
+      senderName: `${mentor.name} (Mentor)`,
+      senderRole: 'mentor',
+      content: chatMessageContent,
+      sentAt: new Date().toISOString(),
+      isRead: false
+    };
+
+    db.addMessage(newMessage);
+    setChatMessageContent('');
+    
+    // Notify the startup founder
+    const startupObj = db.getStartup(activeChatStartupId);
+    const founderObj = db.getFounders().find(f => f.startupId === activeChatStartupId);
+    if (founderObj) {
+      db.addNotification({
+        id: `notif-${Date.now()}-msg-founder`,
+        userId: founderObj.email,
+        type: 'message_received',
+        title: 'New Message from Mentor',
+        message: `Mentor ${mentor.name} has sent a message to your thread.`,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        linkTo: '/founder'
+      });
+    }
+
+    // Notify manager
+    const center = db.getIncubationCenters().find(c => c.domains.includes(startupObj?.sector || '')) || db.getIncubationCenters()[0];
+    if (center) {
+      db.addNotification({
+        id: `notif-${Date.now()}-msg-mgr`,
+        userId: center.managerId,
+        type: 'message_received',
+        title: 'New Message from Mentor',
+        message: `Mentor ${mentor.name} has messaged ${startupObj?.name || 'startup'}.`,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        linkTo: '/manager'
+      });
+    }
+
+    window.dispatchEvent(new Event('rtih_mode_change'));
+    syncStates();
+  };
+
   // Hackathon Scoring Submission
   const handleScoreSubmission = (e: React.FormEvent, submissionId: string) => {
     e.preventDefault();
@@ -468,7 +589,19 @@ export default function MentorDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: userText,
-          startupContext: { portfolioSize: portfolioStartups.length, mentorName: mentor?.name },
+          startupContext: {
+            portfolioSize: portfolioStartups.length,
+            mentorName: mentor?.name,
+            expertise: mentor?.expertise,
+            portfolio: portfolioStartups.map(s => ({
+              id: s.id,
+              name: s.name,
+              stage: s.stage,
+              sector: s.sector,
+              healthScore: s.healthScore,
+              district: s.district
+            }))
+          },
           role: 'Mentor'
         })
       });
@@ -491,10 +624,10 @@ export default function MentorDashboard() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
-      <Navigation />
+    <div className={embedded ? "w-full text-slate-800" : "flex flex-col min-h-screen bg-slate-50"}>
+      {!embedded && <Navigation />}
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className={embedded ? "w-full py-4 space-y-8" : "flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8"}>
         
         {/* Header selector */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5 bg-white p-6 rounded-2xl shadow-sm">
@@ -654,6 +787,21 @@ export default function MentorDashboard() {
                       }`}
                     >
                       Goals & Actions
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveTab('communications');
+                        if (portfolioStartups.length > 0 && !activeChatStartupId) {
+                          setActiveChatStartupId(portfolioStartups[0].id);
+                        }
+                      }}
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                        activeTab === 'communications'
+                          ? 'bg-purple-600 text-white shadow-sm shadow-purple-600/10'
+                          : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      Communications Chat
                     </button>
                   </>
                 )}
@@ -1244,6 +1392,115 @@ export default function MentorDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Tab: Communications Chat */}
+        {activeTab === 'communications' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+              <h2 className="text-lg font-black text-slate-900 mb-1 flex items-center gap-1.5">
+                <MessageSquare className="w-5 h-5 text-purple-500" /> Communications Chat
+              </h2>
+              <p className="text-xs text-slate-500 mb-6">Direct secure channel matching founders, mentors, and program managers under the AP Startup framework.</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start text-slate-800">
+                
+                {/* Startup Conversations List */}
+                <div className="md:col-span-4 border border-slate-200 rounded-xl p-3 bg-white space-y-2 select-none">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-2.5 block mb-1">Portfolio Contacts</span>
+                  {portfolioStartups.map(s => {
+                    const isSelected = activeChatStartupId === s.id;
+                    return (
+                      <div 
+                        key={s.id}
+                        onClick={() => setActiveChatStartupId(s.id)}
+                        className={`p-2.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${
+                          isSelected 
+                            ? 'bg-purple-50 border-purple-200 text-purple-800' 
+                            : 'bg-transparent border-transparent text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {s.name}
+                        <span className="text-[9px] text-slate-400 block font-normal">{s.sector}</span>
+                      </div>
+                    );
+                  })}
+                  {portfolioStartups.length === 0 && (
+                    <div className="text-center py-6 text-xs text-slate-400 italic">No startups assigned.</div>
+                  )}
+                </div>
+
+                {/* Active Conversation Dialog */}
+                <div className="md:col-span-8 border border-slate-200 rounded-xl p-4 bg-white flex flex-col justify-between min-h-[350px]">
+                  {activeChatStartupId ? (
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="pb-3 border-b border-slate-100 flex justify-between items-center mb-4">
+                          <div>
+                            <h3 className="font-black text-slate-900 text-sm">
+                              {db.getStartup(activeChatStartupId)?.name} Chat
+                            </h3>
+                            <p className="text-[9px] text-slate-400">Secure channel logged by RTIH audits.</p>
+                          </div>
+                        </div>
+
+                        {/* Messages area */}
+                        <div className="space-y-3 max-h-[220px] overflow-y-auto mb-4 p-2 bg-slate-50/50 rounded-lg">
+                          {db.getMessages(activeChatStartupId).length > 0 ? (
+                            db.getMessages(activeChatStartupId)
+                              .map(m => {
+                                const isSelf = m.senderId === mentor?.email;
+                                return (
+                                  <div key={m.id} className={`flex items-start gap-2.5 max-w-[85%] ${isSelf ? 'ml-auto flex-row-reverse' : ''}`}>
+                                    <div className={`p-2.5 rounded-lg text-xs leading-relaxed ${
+                                      isSelf 
+                                        ? 'bg-purple-500 text-white font-medium rounded-tr-none'
+                                        : 'bg-white border border-slate-150 text-slate-800 rounded-tl-none shadow-sm'
+                                    }`}>
+                                      <span className="text-[8px] font-black uppercase text-slate-400 block tracking-wider mb-0.5">
+                                        {m.senderName} ({m.senderRole})
+                                      </span>
+                                      {m.content}
+                                      <span className={`text-[7.5px] block text-right mt-1 ${isSelf ? 'text-purple-100' : 'text-slate-405'}`}>
+                                        {new Date(m.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                          ) : (
+                            <p className="text-center py-10 font-bold text-slate-400 italic">Send the first message to initiate conversation.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <form onSubmit={handleSendChatMessage} className="flex gap-2 pt-3 border-t border-slate-100">
+                        <input
+                          type="text"
+                          value={chatMessageContent}
+                          onChange={(e) => setChatMessageContent(e.target.value)}
+                          placeholder="Type your official message here..."
+                          className="flex-1 bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs focus:outline-none text-slate-800"
+                          required
+                        />
+                        <button
+                          type="submit"
+                          className="px-4 py-1.5 bg-purple-500 hover:bg-purple-650 text-white text-xs font-semibold rounded flex items-center justify-center shrink-0"
+                        >
+                          Send
+                        </button>
+                      </form>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col justify-center items-center text-center p-6 text-slate-400 font-bold">
+                      <MessageSquare className="w-8 h-8 text-slate-300 mb-2" />
+                      Select a startup contact from the left pane to view conversation logs.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1972,7 +2229,7 @@ export default function MentorDashboard() {
                           ? 'bg-purple-500 text-white font-medium rounded-tr-none'
                           : 'bg-white border border-slate-200/50 text-slate-800 rounded-tl-none shadow-sm'
                       }`}>
-                        {chat.text}
+                        {chat.sender === 'user' ? chat.text : renderMarkdown(chat.text)}
                       </div>
                     </div>
                   ))}

@@ -1,21 +1,21 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getDb, setActiveUser, getActiveUser } from '@/lib/mockDb';
 import { 
   Lock, 
   Mail, 
-  Download, 
-  Search, 
-  Sparkles, 
   ShieldCheck, 
-  Building, 
   UserCheck, 
-  FileSpreadsheet, 
   Eye, 
   EyeOff,
-  CornerDownLeft
+  ChevronRight,
+  X,
+  Award,
+  Sparkles,
+  Building,
+  User
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -25,98 +25,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'founders' | 'mentors' | 'admin'>('all');
-  const [searchTerm, setSearchTerm] = useState('');
   const [isClient, setIsClient] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Ensure client-side only queries
   useEffect(() => {
     setIsClient(true);
-    // If already logged in, redirect to respective dashboard
     const user = getActiveUser();
     if (user) {
       redirectUser(user.role);
     }
   }, []);
 
-  // Fetch all credentials from mockDb
-  const credentialsList = useMemo(() => {
-    if (!isClient) return [];
-    try {
-      const db = getDb();
-      const founders = db.getFounders();
-      const startups = db.getStartups();
-      const mentors = db.getMentors();
-
-      const list: any[] = [
-        {
-          role: 'admin',
-          name: 'Sri L. Premchandra Reddy, IAS',
-          org: 'RTIH Governing Board',
-          email: 'admin@rtih.ap.gov.in',
-          pass: 'rtih2026'
-        },
-        {
-          role: 'manager',
-          name: 'K. Lakshmi Narayana',
-          org: 'RTIH Spoke Operations',
-          email: 'manager@rtih.ap.gov.in',
-          pass: 'rtih2026'
-        }
-      ];
-
-      // Add first 15 founders
-      founders.slice(0, 15).forEach(f => {
-        const startup = startups.find(s => s.id === f.startupId);
-        list.push({
-          role: 'founder',
-          name: f.name,
-          org: startup ? startup.name : 'Stealth Startup',
-          email: f.email,
-          pass: 'rtih2026',
-          startupId: f.startupId
-        });
-      });
-
-      // Add first 10 mentors
-      mentors.slice(0, 10).forEach(m => {
-        list.push({
-          role: 'mentor',
-          name: m.name,
-          org: m.expertise.slice(0, 2).join(', '),
-          email: m.email,
-          pass: 'rtih2026'
-        });
-      });
-
-      return list;
-    } catch (e) {
-      console.error(e);
-      return [];
-    }
-  }, [isClient]);
-
-  // Filtered credentials list
-  const filteredCredentials = useMemo(() => {
-    return credentialsList.filter(item => {
-      const matchesSearch = 
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        item.org.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        item.email.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      if (activeTab === 'all') return matchesSearch;
-      if (activeTab === 'founders') return matchesSearch && item.role === 'founder';
-      if (activeTab === 'mentors') return matchesSearch && item.role === 'mentor';
-      if (activeTab === 'admin') return matchesSearch && (item.role === 'admin' || item.role === 'manager');
-      return matchesSearch;
-    });
-  }, [credentialsList, activeTab, searchTerm]);
-
   const redirectUser = (role: string) => {
-    if (role === 'admin') router.push('/admin');
-    else if (role === 'manager') router.push('/manager');
-    else if (role === 'mentor') router.push('/mentor');
-    else if (role === 'founder') router.push('/founder');
+    router.push('/');
   };
 
   const handleLogin = (e: React.FormEvent) => {
@@ -133,8 +55,8 @@ export default function LoginPage() {
       return;
     }
 
-    // Try finding matching admin/manager
-    if (email === 'admin@rtih.ap.gov.in') {
+    // Try finding matching admin
+    if (email.toLowerCase() === 'admin@rtih.ap.gov.in') {
       setActiveUser({
         id: 'admin-1',
         email: 'admin@rtih.ap.gov.in',
@@ -146,11 +68,21 @@ export default function LoginPage() {
       return;
     }
 
-    if (email === 'manager@rtih.ap.gov.in') {
+    // Try finding matching manager dynamically (accept manager@ or manager.*@)
+    if (email.toLowerCase() === 'manager@rtih.ap.gov.in' || (email.toLowerCase().startsWith('manager.') && email.toLowerCase().endsWith('@rtih.ap.gov.in'))) {
+      const db = getDb();
+      let matchedEmail = email.toLowerCase();
+      // Handle legacy/short manager@ email to K. Lakshmi Narayana (Rajamahendravaram)
+      if (matchedEmail === 'manager@rtih.ap.gov.in') {
+        matchedEmail = 'manager.rajamahendravaram@rtih.ap.gov.in';
+      }
+      const center = db.getIncubationCenters().find(c => c.managerId.toLowerCase() === matchedEmail);
+      const managerName = center ? center.managerName : 'K. Lakshmi Narayana';
+      
       setActiveUser({
-        id: 'manager-1',
-        email: 'manager@rtih.ap.gov.in',
-        name: 'K. Lakshmi Narayana',
+        id: center ? `manager-${center.id}` : 'manager-1',
+        email: matchedEmail,
+        name: managerName,
         role: 'manager'
       });
       triggerSuccessConfetti();
@@ -198,18 +130,17 @@ export default function LoginPage() {
     setPassword(item.pass);
     setError('');
     
-    // Simulate login button click
     const db = getDb();
     if (item.role === 'admin' || item.role === 'manager') {
+      const center = item.role === 'manager' ? db.getIncubationCenters().find(c => c.managerId.toLowerCase() === item.email.toLowerCase()) : null;
       setActiveUser({
-        id: item.role === 'admin' ? 'admin-1' : 'manager-1',
+        id: item.role === 'admin' ? 'admin-1' : (center ? `manager-${center.id}` : 'manager-1'),
         email: item.email,
         name: item.name,
         role: item.role
       });
     } else if (item.role === 'founder') {
-      const founder = db.getFounder(item.email); // or lookup by email
-      const fObj = db.getFounders().find(f => f.email === item.email);
+      const fObj = db.getFounders().find(f => f.email.toLowerCase() === item.email.toLowerCase());
       const startup = fObj ? db.getStartup(fObj.startupId || '') : null;
       setActiveUser({
         id: fObj ? fObj.id : 'founder-1',
@@ -220,7 +151,7 @@ export default function LoginPage() {
         companyName: startup ? startup.name : null
       });
     } else {
-      const mObj = db.getMentors().find(m => m.email === item.email);
+      const mObj = db.getMentors().find(m => m.email.toLowerCase() === item.email.toLowerCase());
       setActiveUser({
         id: mObj ? mObj.id : 'mentor-1',
         email: item.email,
@@ -241,258 +172,446 @@ export default function LoginPage() {
     });
   };
 
-  const exportCSV = () => {
-    let csvContent = 'data:text/csv;charset=utf-8,';
-    csvContent += 'Role,Name,Organization/Startup,Email,Password\n';
-    
-    credentialsList.forEach(item => {
-      const row = `"${item.role}","${item.name}","${item.org}","${item.email}","${item.pass}"`;
-      csvContent += row + '\n';
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', 'rtih_ecosystem_credentials.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const demoAccounts = [
+    {
+      group: 'Operations & Policy Command (Admin & Managers)',
+      items: [
+        {
+          role: 'admin',
+          name: 'Sri L. Premchandra Reddy, IAS',
+          org: 'RTIH Governing Board (Admin)',
+          email: 'admin@rtih.ap.gov.in',
+          pass: 'rtih2026',
+          description: 'Access full AP state telemetry, economic projection metrics, and approve applications.'
+        },
+        {
+          role: 'manager',
+          name: 'Sri L. Premchandra Reddy, IAS',
+          org: 'Amaravati Central Hub Manager',
+          email: 'manager.amaravati@rtih.ap.gov.in',
+          pass: 'rtih2026',
+          description: 'Climate Tech, Blockchain, AVGC & XR, Health Care, Urban Systems, Supply Chain.'
+        },
+        {
+          role: 'manager',
+          name: 'Dr. Srinivas Prasad',
+          org: 'Visakhapatnam Hub Manager',
+          email: 'manager.vizag@rtih.ap.gov.in',
+          pass: 'rtih2026',
+          description: 'Medtech, Fintech, Biotech, Blue economy, Smart Infra.'
+        },
+        {
+          role: 'manager',
+          name: 'K. Lakshmi Narayana',
+          org: 'Rajamahendravaram Hub Manager',
+          email: 'manager.rajamahendravaram@rtih.ap.gov.in',
+          pass: 'rtih2026',
+          description: 'Food Processing, Marine Tech, Aquaculture, Energy Transition.'
+        },
+        {
+          role: 'manager',
+          name: 'G. Rama Chandra Murthy',
+          org: 'Vijayawada Hub Manager',
+          email: 'manager.vijayawada@rtih.ap.gov.in',
+          pass: 'rtih2026',
+          description: 'Industrial IoT, Agri Technology, Auto-Body Building/Light Engineering, Construction Technology.'
+        },
+        {
+          role: 'manager',
+          name: 'B. R. K. Prasad',
+          org: 'Ananthapuramu Hub Manager',
+          email: 'manager.ananthapuramu@rtih.ap.gov.in',
+          pass: 'rtih2026',
+          description: 'Automotive & EV sys, Hybrid RE, Agri & Food Processing, Logistics-Warehousing, Defence & Aerospace.'
+        },
+        {
+          role: 'manager',
+          name: 'Prof. S. R. Venkat Raman',
+          org: 'Tirupati Hub Manager',
+          email: 'manager.tirupati@rtih.ap.gov.in',
+          pass: 'rtih2026',
+          description: 'Battery & Adv. Manufacturing, Electronics Cluster, Horti Tech & Diary, Space Tech.'
+        }
+      ]
+    },
+    {
+      group: 'Startup Founders (Stage-wise Groups)',
+      items: [
+        {
+          role: 'founder',
+          level: 'Beginner',
+          stage: 'Idea Stage',
+          name: 'Dr. Srinivas Koppula',
+          org: 'Rayalaseema Health Diagnostics',
+          email: 'srinivas.koppula@rtihfounder.in',
+          pass: 'rtih2026',
+          startupId: 'startup-3',
+          description: 'Newly incubated. Focused on diagnostic telemetry, early market research, and mentor alignment.'
+        },
+        {
+          role: 'founder',
+          level: 'Intermediate',
+          stage: 'Validation & Prototype',
+          name: 'Kalyani Devineni',
+          org: 'Godavari Aquatech Labs',
+          email: 'kalyani.d@rtihfounder.in',
+          pass: 'rtih2026',
+          startupId: 'startup-2',
+          description: 'Mid-stage. Completing field prototype deployment, masterclass lessons, and grant requests.'
+        },
+        {
+          role: 'founder',
+          level: 'Pro',
+          stage: 'Scale & Revenue',
+          name: 'Hari Prasad Ananth',
+          org: 'Kalyan AgriSystems',
+          email: 'hari.prasad@rtihfounder.in',
+          pass: 'rtih2026',
+          startupId: 'startup-1',
+          description: 'High-growth. Managing jobs board, tracking ARR curves, and applying for Series-A linkages.'
+        }
+      ]
+    },
+    {
+      group: 'Ecosystem Mentors (Regional Hub Specialists)',
+      items: [
+        {
+          role: 'mentor',
+          name: 'Dr. A. Srinivas Rao',
+          org: 'Visakhapatnam Hub - Medtech & Blue economy',
+          email: 'vizag.mentor1@rtihmentor.in',
+          pass: 'rtih2026',
+          description: 'Specialist in clinical trials, medical device regulation, and oceanography tech.'
+        },
+        {
+          role: 'mentor',
+          name: 'Prof. G. Veerraju',
+          org: 'Visakhapatnam Hub - Biotech & Fintech',
+          email: 'vizag.mentor2@rtihmentor.in',
+          pass: 'rtih2026',
+          description: 'Specialist in genetics bio-safety, molecular analysis, and algorithmic stock platforms.'
+        },
+        {
+          role: 'mentor',
+          name: 'Dr. M. Sridhar',
+          org: 'Vijayawada Hub - Industrial IoT & Construction',
+          email: 'vijayawada.mentor1@rtihmentor.in',
+          pass: 'rtih2026',
+          description: 'Focuses on building information modeling, sensor communication protocols, and edge compute.'
+        },
+        {
+          role: 'mentor',
+          name: 'Smt. K. Rama Devi',
+          org: 'Vijayawada Hub - AgriTech & Auto-Body Eng',
+          email: 'vijayawada.mentor2@rtihmentor.in',
+          pass: 'rtih2026',
+          description: 'Advises on precision farming, tractor hydraulics, light metal casting, and rural supply chain.'
+        },
+        {
+          role: 'mentor',
+          name: 'Sri P. Venkateswara Rao',
+          org: 'Rajamahendravaram Hub - Food & Energy Transition',
+          email: 'rajamundry.mentor1@rtihmentor.in',
+          pass: 'rtih2026',
+          description: 'Specialist in thermal food preservation, hydrogen combustion, and biogas cogeneration.'
+        },
+        {
+          role: 'mentor',
+          name: 'Dr. N. Mangadevi',
+          org: 'Rajamahendravaram Hub - Aquaculture & Marine',
+          email: 'rajamundry.mentor2@rtihmentor.in',
+          pass: 'rtih2026',
+          description: 'Focuses on bio-floc shrimp cultivation, estuary ecology, and telemetry buoy deployment.'
+        },
+        {
+          role: 'mentor',
+          name: 'Prof. K. Hemachandra Reddy',
+          org: 'Ananthapuramu Hub - EV Systems & Logistics',
+          email: 'ananthapuramu.mentor1@rtihmentor.in',
+          pass: 'rtih2026',
+          description: 'Advises on dual-motor drivetrains, BMS cell balancing, cold chain sorting, and autonomous routing.'
+        },
+        {
+          role: 'mentor',
+          name: 'Dr. C. R. Giridhar',
+          org: 'Ananthapuramu Hub - Hybrid RE & Food Processing',
+          email: 'ananthapuramu.mentor2@rtihmentor.in',
+          pass: 'rtih2026',
+          description: 'Focuses on solar-wind storage systems, high-efficiency milling, and millet value-added products.'
+        },
+        {
+          role: 'mentor',
+          name: 'Sri J. A. Chowdary',
+          org: 'Amaravati Central Hub - Climate Tech & Blockchain',
+          email: 'amaravati.mentor1@rtihmentor.in',
+          pass: 'rtih2026',
+          description: 'Guidance on carbon token systems, sharded ledger systems, and industrial energy auditing.'
+        },
+        {
+          role: 'mentor',
+          name: 'Dr. T. Lasya',
+          org: 'Amaravati Central Hub - AVGC & Healthcare',
+          email: 'amaravati.mentor2@rtihmentor.in',
+          pass: 'rtih2026',
+          description: 'Advises on XR immersive therapies, diagnostic imaging engines, and health telemetry standardizations.'
+        },
+        {
+          role: 'mentor',
+          name: 'Prof. S. R. S. Prasanna',
+          org: 'Tirupati Hub - Battery Tech & Space Tech',
+          email: 'tirupati.mentor1@rtihmentor.in',
+          pass: 'rtih2026',
+          description: 'Focuses on solid-state battery chemistry, micro-satellite avionics, and carbon fiber hulls.'
+        },
+        {
+          role: 'mentor',
+          name: 'Dr. V. R. K. Prasad',
+          org: 'Tirupati Hub - Electronics Cluster & Horti Tech',
+          email: 'tirupati.mentor2@rtihmentor.in',
+          pass: 'rtih2026',
+          description: 'Advises on semiconductor design packaging, high-yield floriculture, and automated dairies.'
+        }
+      ]
+    }
+  ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-between py-12 px-4 sm:px-6 lg:px-8">
-      {/* Brand Header */}
-      <div className="flex flex-col items-center">
-        <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500 text-white font-extrabold text-2xl shadow-lg shadow-emerald-500/20">
-          AP
-        </div>
-        <h2 className="mt-4 text-center text-3xl font-extrabold tracking-tight text-slate-900 leading-none">
-          RTIH InnovationOS
-        </h2>
-        <p className="mt-2 text-center text-xs text-slate-500 font-semibold uppercase tracking-wider">
-          Ratan Tata Innovation Hub • Govt. of Andhra Pradesh
-        </p>
-      </div>
+    <div className="min-h-screen relative flex items-center justify-end bg-[url('/login.png')] bg-cover bg-center bg-no-repeat overflow-hidden font-sans">
+      
+      {/* Visual Overlay to darken the background slightly and focus the login card */}
+      <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[1px] z-0"></div>
 
-      {/* Main Grid */}
-      <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start my-8">
-        
-        {/* Form panel */}
-        <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200/80 shadow-md p-6 sm:p-8 space-y-6">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <CornerDownLeft className="w-5 h-5 text-emerald-500" />
-              Ecosystem Portal Login
-            </h3>
-            <p className="text-xs text-slate-400 mt-1 leading-normal">
-              Enter your credentials to enter your role dashboard.
-            </p>
-          </div>
+      {/* Floating Arrow Mark Trigger Button on the Left Edge */}
+      {!drawerOpen && (
+        <button
+          onClick={() => setDrawerOpen(true)}
+          className="fixed left-0 top-1/2 -translate-y-1/2 z-40 bg-emerald-600 hover:bg-emerald-750 text-white rounded-r-2xl py-6 px-3.5 shadow-2xl border-y border-r border-emerald-400/40 flex flex-col items-center gap-3 transition-all duration-300 group cursor-pointer"
+          title="Show Auto-Login Credentials Directory"
+        >
+          <ChevronRight className="w-5 h-5 animate-bounce-horizontal" />
+          <span className="text-[10px] font-black uppercase tracking-widest [writing-mode:vertical-lr] select-none text-emerald-100">
+            Show Accounts
+          </span>
+        </button>
+      )}
 
-          <form className="space-y-4" onSubmit={handleLogin}>
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs font-semibold text-red-600">
-                {error}
-              </div>
-            )}
-
+      {/* Slide-in Credentials Directory Sidebar (from Left) */}
+      <div
+        className={`fixed left-0 top-0 h-full w-full sm:max-w-md bg-white shadow-2xl z-50 border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out ${
+          drawerOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Drawer Header */}
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-emerald-600" />
             <div>
-              <label htmlFor="email" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                Ecosystem Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-4 w-4 text-slate-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-emerald-500 text-slate-800 bg-slate-50/50"
-                  placeholder="name@rtihfounder.in"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                Ecosystem Access Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-4 w-4 text-slate-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-10 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-emerald-500 text-slate-800 bg-slate-50/50"
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
-            >
-              Sign In to Command Center
-            </button>
-          </form>
-
-          <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl text-[10px] text-slate-500 leading-normal flex items-start gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold text-slate-700">Enterprise Notice: </span>
-              Verified credentials directory loaded. Authentication password defaults to <code className="bg-emerald-500/10 text-emerald-700 px-1 rounded font-bold">rtih2026</code>.
-            </div>
-          </div>
-        </div>
-
-        {/* Excel Spreadsheet Credentials View */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/80 shadow-md p-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <FileSpreadsheet className="w-5 h-5 text-emerald-500" />
-                Ecosystem Credentials Directory (Excel Layout)
+              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+                Ecosystem Directory
               </h3>
-              <p className="text-xs text-slate-450 mt-1">
-                Directory of all seeded startups, mentors, and administrators. Click any row to instantly log in!
+              <p className="text-[10px] text-slate-450 mt-0.5 font-medium">
+                Click any interactive box below to log in instantly.
               </p>
             </div>
-            
-            <button
-              onClick={exportCSV}
-              className="px-3.5 py-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-700 flex items-center gap-2 transition-colors shrink-0"
-              title="Download all mock data credentials as a CSV file to open in Excel."
-            >
-              <Download className="w-4 h-4" />
-              Download Directory (.CSV)
-            </button>
           </div>
+          <button
+            onClick={() => setDrawerOpen(false)}
+            className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+            title="Close Directory"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-          {/* Directory Tabs and Search */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-between items-center">
-            {/* Tabs */}
-            <div className="flex bg-slate-100 p-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider shrink-0 w-full sm:w-auto">
-              {(['all', 'founders', 'mentors', 'admin'] as const).map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-md transition-colors ${
-                    activeTab === tab 
-                      ? 'bg-white text-slate-900 shadow-sm' 
-                      : 'text-slate-450 hover:text-slate-700'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+        {/* Categories List (Grouped boxes) */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-6 bg-slate-50/50 bg-[#f8fafc]">
+          {demoAccounts.map((group, gIdx) => (
+            <div key={gIdx} className="space-y-3">
+              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200/60 pb-1.5">
+                {group.group}
+              </h4>
+              <div className="grid grid-cols-1 gap-2.5">
+                {group.items.map((item, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      autofillAndLogin(item);
+                      setDrawerOpen(false);
+                    }}
+                    className="w-full text-left p-3.5 bg-white border border-slate-200 rounded-xl hover:border-emerald-500 hover:shadow-md transition-all group relative overflow-hidden cursor-pointer"
+                  >
+                    {/* Role highlight bar */}
+                    <div className={`absolute left-0 top-0 h-full w-1.5 ${
+                      item.role === 'admin' 
+                        ? 'bg-red-500' 
+                        : item.role === 'manager' 
+                          ? 'bg-orange-500' 
+                          : item.role === 'mentor' 
+                            ? 'bg-purple-500' 
+                            : 'bg-emerald-500'
+                    }`}></div>
+
+                    <div className="pl-2 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-800 group-hover:text-emerald-700 transition-colors">
+                          {item.name}
+                        </span>
+                        
+                        {/* Custom role badge */}
+                        <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${
+                          item.role === 'admin' 
+                            ? 'bg-red-50 text-red-700' 
+                            : item.role === 'manager' 
+                              ? 'bg-orange-50 text-orange-700' 
+                              : item.role === 'mentor' 
+                                ? 'bg-purple-55 text-purple-700' 
+                                : 'bg-emerald-55 text-emerald-700'
+                        }`}>
+                          {item.role === 'founder' ? (item as any).level : item.role}
+                        </span>
+                      </div>
+
+                      <div className="text-[10px] font-bold text-slate-500 flex items-center gap-1.5">
+                        {item.role === 'founder' && <Building className="w-3.5 h-3.5 text-slate-400" />}
+                        {item.role === 'mentor' && <Sparkles className="w-3.5 h-3.5 text-slate-400" />}
+                        {(item.role === 'admin' || item.role === 'manager') && <User className="w-3.5 h-3.5 text-slate-400" />}
+                        <span>{item.org}</span>
+                      </div>
+
+                      <p className="text-[10px] text-slate-400 font-medium leading-normal pt-1 italic">
+                        {item.description}
+                      </p>
+                      
+                      <div className="text-[9px] font-mono text-slate-400 pt-1 flex justify-between">
+                        <span>{item.email}</span>
+                        <span className="font-bold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                          Click to enter →
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
+          ))}
+        </div>
+      </div>
 
-            {/* Search */}
-            <div className="relative w-full sm:w-64">
-              <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                <Search className="h-3.5 w-3.5 text-slate-400" />
-              </span>
+      {/* Background overlay toggle when drawer is open */}
+      {drawerOpen && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-40"
+          onClick={() => setDrawerOpen(false)}
+        ></div>
+      )}
+
+      {/* Login Card (Aligned on the Right) */}
+      <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-2xl p-6 sm:p-8 space-y-6 z-10 mr-0 lg:mr-20 animate-slide-in relative">
+        
+        {/* Government Branding Header */}
+        <div className="flex flex-col items-center border-b border-slate-100 pb-5">
+          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500 text-white font-extrabold text-lg shadow-lg shadow-emerald-500/20">
+            AP
+          </div>
+          <h2 className="mt-3 text-center text-xl font-black tracking-tight text-slate-900 leading-none">
+            RTIH InnovationOS
+          </h2>
+          <p className="mt-1.5 text-center text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+            Ratan Tata Innovation Hub • Govt. of AP
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <UserCheck className="w-4 h-4 text-emerald-500" />
+            Ecosystem Portal Login
+          </h3>
+          <p className="text-[11px] text-slate-400 mt-1 leading-normal font-medium">
+            Enter your credentials or click the left drawer arrow to browse the seeded demo accounts.
+          </p>
+        </div>
+
+        <form className="space-y-4.5" onSubmit={handleLogin}>
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs font-semibold text-red-600">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="email" className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-1.5">
+              Ecosystem Email Address
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Mail className="h-4 w-4 text-slate-450" />
+              </div>
               <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by company or email..."
-                className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-emerald-500 text-slate-800"
+                id="email"
+                name="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-emerald-500 text-slate-800 bg-slate-50/50"
+                placeholder="name@rtihfounder.in"
               />
             </div>
           </div>
 
-          {/* Spreadsheet table wrapper */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden shadow-inner max-h-[360px] overflow-y-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">
-                  <th className="px-4 py-2.5 border-r border-slate-200">Role</th>
-                  <th className="px-4 py-2.5 border-r border-slate-200">Name</th>
-                  <th className="px-4 py-2.5 border-r border-slate-200">Organization / Focus</th>
-                  <th className="px-4 py-2.5 border-r border-slate-200">Email Address</th>
-                  <th className="px-4 py-2.5 border-r border-slate-200">Password</th>
-                  <th className="px-4 py-2.5 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
-                {filteredCredentials.length > 0 ? (
-                  filteredCredentials.map((item, index) => (
-                    <tr 
-                      key={index} 
-                      className="hover:bg-slate-50/80 transition-colors group"
-                    >
-                      <td className="px-4 py-2 border-r border-slate-100">
-                        <span className={`px-2 py-0.5 rounded-[4px] text-[9px] font-extrabold uppercase ${
-                          item.role === 'founder' 
-                            ? 'bg-emerald-100 text-emerald-800' 
-                            : item.role === 'mentor' 
-                              ? 'bg-purple-100 text-purple-800' 
-                              : item.role === 'manager'
-                                ? 'bg-orange-100 text-orange-850'
-                                : 'bg-red-100 text-red-800'
-                        }`}>
-                          {item.role}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 font-semibold text-slate-800 border-r border-slate-100">
-                        {item.name}
-                      </td>
-                      <td className="px-4 py-2 text-slate-500 border-r border-slate-100 font-medium">
-                        {item.org}
-                      </td>
-                      <td className="px-4 py-2 text-slate-650 border-r border-slate-100 font-mono text-[10px]">
-                        {item.email}
-                      </td>
-                      <td className="px-4 py-2 text-slate-400 border-r border-slate-100 font-mono text-[10px]">
-                        {item.pass}
-                      </td>
-                      <td className="px-4 py-2 text-center">
-                        <button
-                          onClick={() => autofillAndLogin(item)}
-                          className="px-2.5 py-1 bg-slate-100 hover:bg-emerald-500 hover:text-white border border-slate-200 hover:border-emerald-500 rounded text-[10px] font-bold text-slate-700 flex items-center justify-center gap-1 mx-auto transition-all shadow-sm group-hover:scale-105 active:scale-95 cursor-pointer"
-                        >
-                          <UserCheck className="w-3.5 h-3.5 shrink-0" />
-                          <span>Autofill & Login</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="text-center py-12 text-slate-400 font-semibold">
-                      No credentials found matching search criteria.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div>
+            <label htmlFor="password" className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-1.5">
+              Ecosystem Access Password
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Lock className="h-4 w-4 text-slate-455" />
+              </div>
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="block w-full pl-10 pr-10 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-emerald-500 text-slate-800 bg-slate-50/50"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-450 hover:text-slate-650"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors cursor-pointer"
+          >
+            Sign In to Command Center
+          </button>
+        </form>
+
+        <div className="p-3 bg-emerald-50 border border-emerald-200/50 rounded-xl text-[10px] text-slate-500 leading-normal flex items-start gap-2 shadow-inner">
+          <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5 animate-pulse" />
+          <div>
+            <span className="font-bold text-slate-700">Auto-Login Hint: </span>
+            Click the <strong className="text-emerald-600">Show Accounts</strong> chevron drawer floating on the left side of the screen to browse mock accounts.
           </div>
         </div>
 
-      </div>
-
-      {/* Gov Footer */}
-      <div className="text-center text-[10px] text-slate-400 border-t border-slate-200 pt-6">
-        <p className="font-semibold text-slate-500">Ratan Tata Innovation Hub (RTIH) • Government of Andhra Pradesh</p>
-        <p className="mt-1">Official InnovationOS Gateway. Secure access granted only to verified Andhra Pradesh startup ecosystem stakeholders. All rights reserved.</p>
+        {/* Back to landing link */}
+        <div className="text-center pt-2 border-t border-slate-100">
+          <button
+            onClick={() => router.push('/')}
+            className="text-[10px] font-bold text-slate-455 hover:text-slate-750 transition-colors uppercase tracking-wider"
+          >
+            ← Back to Public Portal
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -76,10 +76,72 @@ const AI_MENTOR_RECOMMENDATIONS: Record<string, { name: string; score: number; r
 
 type ManagerTab = 'analytics' | 'portfolio' | 'health' | 'mentors' | 'promotions' | 'notifications' | 'communications' | 'advisor';
 
-export default function ProgramManagerDashboard() {
+// Helper functions for rendering Markdown in chatbot messages
+const parseInlineMarkdown = (text: string) => {
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={idx} className="font-extrabold text-slate-900">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={idx} className="italic text-slate-800">{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+};
+
+const renderMarkdown = (text: string) => {
+  const lines = text.split('\n');
+  return lines.map((line, lineIdx) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      return <div key={lineIdx} className="h-2" />;
+    }
+
+    if (trimmed.startsWith('### ')) {
+      const headingText = trimmed.replace('### ', '');
+      return (
+        <h4 key={lineIdx} className="text-xs font-black text-slate-900 mt-2.5 mb-1.5 flex items-center gap-1">
+          {parseInlineMarkdown(headingText)}
+        </h4>
+      );
+    }
+
+    if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+      const bulletText = trimmed.substring(2);
+      return (
+        <div key={lineIdx} className="flex items-start gap-1.5 pl-2 my-0.5 text-xs text-slate-700 leading-relaxed">
+          <span className="text-emerald-500 font-bold text-sm leading-none">•</span>
+          <span className="flex-1">{parseInlineMarkdown(bulletText)}</span>
+        </div>
+      );
+    }
+
+    const matchNumbered = trimmed.match(/^(\d+)\.\s(.*)/);
+    if (matchNumbered) {
+      const num = matchNumbered[1];
+      const itemText = matchNumbered[2];
+      return (
+        <div key={lineIdx} className="flex items-start gap-1.5 pl-2 my-0.5 text-xs text-slate-700 leading-relaxed">
+          <span className="text-emerald-600 font-bold leading-none">{num}.</span>
+          <span className="flex-1">{parseInlineMarkdown(itemText)}</span>
+        </div>
+      );
+    }
+
+    return (
+      <p key={lineIdx} className="text-xs text-slate-700 my-1 leading-relaxed">
+        {parseInlineMarkdown(line)}
+      </p>
+    );
+  });
+};
+
+export default function ProgramManagerDashboard({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const [db, setDb] = useState(() => getDb());
   const [execActive, setExecActive] = useState(false);
+  const [renderTrigger, setRenderTrigger] = useState(0);
   const [activeTab, setActiveTab] = useState<ManagerTab>('analytics');
 
   // Tab grouping helpers
@@ -143,6 +205,7 @@ export default function ProgramManagerDashboard() {
   const syncStates = () => {
     setDb(getDb());
     setExecActive(isExecutiveModeActive());
+    setRenderTrigger(prev => prev + 1);
   };
 
   // Login check
@@ -361,8 +424,9 @@ export default function ProgramManagerDashboard() {
     };
 
     db.addMessage(newMessage);
-    setDb(getDb());
     setChatMessageContent('');
+    window.dispatchEvent(new Event('rtih_mode_change'));
+    syncStates();
   };
 
   // Chat with AI Copilot
@@ -381,7 +445,18 @@ export default function ProgramManagerDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: userText,
-          startupContext: { highRiskCount: highRiskStartups.length, totalStartups: stats.totalStartups },
+          startupContext: {
+            highRiskCount: highRiskStartups.length,
+            totalStartups: stats.totalStartups,
+            cohort: db.getStartups().map(s => ({
+              id: s.id,
+              name: s.name,
+              stage: s.stage,
+              sector: s.sector,
+              healthScore: s.healthScore,
+              district: s.district
+            }))
+          },
           role: 'Program Manager'
         })
       });
@@ -413,10 +488,10 @@ export default function ProgramManagerDashboard() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
-      <Navigation />
+    <div className={embedded ? "w-full text-slate-800" : "flex flex-col min-h-screen bg-slate-50"}>
+      {!embedded && <Navigation />}
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className={embedded ? "w-full py-4 space-y-6" : "flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6"}>
         
         {/* Banner console */}
         <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5 bg-white p-6 rounded-2xl shadow-sm">
@@ -1878,7 +1953,7 @@ export default function ProgramManagerDashboard() {
                               ? 'bg-emerald-500 text-white font-medium rounded-tr-none shadow-sm'
                               : 'bg-white border border-slate-150 text-slate-800 rounded-tl-none shadow-sm'
                           }`}>
-                            {chat.text}
+                            {chat.sender === 'user' ? chat.text : renderMarkdown(chat.text)}
                           </div>
                         </div>
                       ))}
@@ -1916,14 +1991,16 @@ export default function ProgramManagerDashboard() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-250 bg-white py-8 text-center text-xs text-slate-400 mt-10">
-        <p className="font-medium text-slate-600 text-center">
-          Andhra Pradesh Innovation Command Center • Program Manager Console
-        </p>
-        <p className="mt-2 text-[10px] text-center">
-          Authorized manager operations active. Telemetry compiled under AP Innovation Society guidelines.
-        </p>
-      </footer>
+      {!embedded && (
+        <footer className="border-t border-slate-250 bg-white py-8 text-center text-xs text-slate-400 mt-10">
+          <p className="font-medium text-slate-600 text-center">
+            Andhra Pradesh Innovation Command Center • Program Manager Console
+          </p>
+          <p className="mt-2 text-[10px] text-center">
+            Authorized manager operations active. Telemetry compiled under AP Innovation Society guidelines.
+          </p>
+        </footer>
+      )}
     </div>
   );
 }

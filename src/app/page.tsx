@@ -4,6 +4,10 @@ import Navigation from '@/components/Navigation';
 import InnovationMap from '@/components/InnovationMap';
 import FamilyTracker from '@/components/FamilyTracker';
 import OutpostCenter from '@/components/OutpostCenter';
+import AdminCommandCenter from './admin/page';
+import FounderDashboard from './founder/page';
+import ProgramManagerDashboard from './manager/page';
+import MentorDashboard from './mentor/page';
 import { useState, useEffect } from 'react';
 import { getDb, isDemoModeActive, getActiveUser, setActiveUser } from '@/lib/mockDb';
 import { ArrowRight, Trophy, Landmark, Users, TrendingUp, Cpu, Globe, Target } from 'lucide-react';
@@ -54,10 +58,8 @@ export default function Home() {
   }, []);
 
   const HERO_STATS = [
-    { label: 'Startups Registered', count: stats.totalStartups.toLocaleString(), icon: Cpu, desc: 'Progressing towards 20k goal' },
-    { label: 'Jobs Created', count: stats.totalJobs.toLocaleString(), icon: Users, desc: 'Across all AP districts' },
-    { label: 'Soonicorn Pipeline', count: `${stats.soonicorns}+`, icon: TrendingUp, desc: 'High-growth scale targets' },
-    { label: 'Unicorn Track', count: `${stats.unicorns}+`, icon: Trophy, desc: 'Global startup powerhouses' },
+    { label: 'Soonicorn Pipeline', count: `${stats.soonicorns}+`, icon: TrendingUp, desc: 'High-growth scale targets (Goal: 20+ by 2029)' },
+    { label: 'Unicorn Track', count: `${stats.unicorns}+`, icon: Trophy, desc: 'Global startup powerhouses (Goal: 10+ by 2029)' },
     { label: 'Centers of Excellence', count: `${stats.activeOutposts} CoEs`, icon: Landmark, desc: 'Active regional outposts' }
   ];
 
@@ -99,234 +101,225 @@ export default function Home() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navigation />
+    <div className={`flex flex-col min-h-screen relative overflow-x-hidden ${!currentUser ? "bg-[url('/home.jpg')] bg-cover bg-center bg-no-repeat bg-fixed" : "bg-slate-50"}`}>
+      {/* Dark overlay for readability over the whole website background */}
+      {!currentUser && (
+        <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-[1px] z-0 pointer-events-none"></div>
+      )}
       
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-        {/* Hero Section */}
-        <section className="text-center max-w-4xl mx-auto space-y-6 pt-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-            AP Startup Policy 2021-2026 Active Portal
-          </div>
-          
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-white dark:via-slate-200 dark:to-slate-400 bg-clip-text text-transparent">
-            Transforming Andhra Pradesh into a <br className="hidden md:inline" />
-            <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
-              Global Startup Powerhouse
-            </span>
-          </h1>
-
-          <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">
-            Welcome to RTIH InnovationOS. Empowering Innovation. Enabling Growth. The central operating system linking AP founders, universities, outposts, and global capital networks.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            {currentUser ? (
-              <>
-                <Link 
-                  href={
-                    currentUser.role === 'admin' 
-                      ? '/admin' 
-                      : currentUser.role === 'manager' 
-                        ? '/manager' 
-                        : currentUser.role === 'mentor' 
-                          ? '/mentor' 
-                          : '/founder'
-                  } 
-                  className="px-5 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold flex items-center gap-2 shadow-lg shadow-emerald-500/15 transition-all"
-                >
-                  Enter Your Command Center ({currentUser.role.toUpperCase()}) <ArrowRight className="w-4 h-4" />
-                </Link>
+      <div className="relative z-10 flex flex-col min-h-screen">
+        <Navigation />
+        <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+          {currentUser ? (
+            <div className="space-y-8 bg-slate-50 p-4 sm:p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-2">
+                <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded uppercase tracking-wider">
+                  Live Console Active ({currentUser.role.toUpperCase()})
+                </span>
                 <button
                   onClick={() => {
                     setActiveUser(null);
                     setCurrentUser(null);
-                    router.push('/login');
+                    window.dispatchEvent(new Event('rtih_user_change'));
                   }}
-                  className="px-5 py-3 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-800 text-sm font-semibold transition-colors cursor-pointer"
+                  className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors"
                 >
-                  Log Out
+                  Sign Out / Exit Dashboard
                 </button>
-              </>
-            ) : (
-              <>
-                <Link 
-                  href="/login" 
-                  className="px-5 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold flex items-center gap-2 shadow-lg shadow-emerald-500/15 transition-all"
-                >
-                  Access Ecosystem Portal (Sign In) <ArrowRight className="w-4 h-4" />
-                </Link>
-                <Link
-                  href="/register"
-                  className="px-5 py-3 rounded-lg border border-emerald-500 text-emerald-600 hover:bg-emerald-50 text-sm font-semibold flex items-center gap-2 transition-all"
-                >
-                  Apply to RTIH Incubation
-                </Link>
-                <Link
-                  href="/apply"
-                  className="px-5 py-3 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold flex items-center gap-2 transition-all"
-                >
-                  Find Jobs at Startups
-                </Link>
-              </>
-            )}
-          </div>
-        </section>
-
-        {/* Hero Goal Metrics Scorecard */}
-        <section className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {HERO_STATS.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <div 
-                key={stat.label} 
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center hover:border-slate-350 dark:hover:border-slate-700 transition-all shadow-sm"
-              >
-                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-slate-50 dark:bg-slate-800 mx-auto text-emerald-500 border border-slate-100 dark:border-slate-700 shadow-inner">
-                  <Icon className="w-5 h-5" />
-                </div>
-                <h3 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white mt-3">
-                  {stat.count}
-                </h3>
-                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
-                  {stat.label}
-                </p>
-                <p className="text-[9px] text-slate-400 mt-1 hidden sm:block leading-tight">
-                  {stat.desc}
-                </p>
               </div>
-            );
-          })}
-        </section>
-
-        {/* Hub & Spoke Regional Map Section */}
-        <section className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Globe className="w-5 h-5 text-emerald-500" />
-                RTIH Hub & Spoke Infrastructure Map
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Amaravati (Central Hub) linking five Regional Innovation Centers to distribute resources statewide.
-              </p>
+              {currentUser.role === 'admin' && <AdminCommandCenter embedded={true} />}
+              {currentUser.role === 'founder' && <FounderDashboard embedded={true} />}
+              {currentUser.role === 'manager' && <ProgramManagerDashboard embedded={true} />}
+              {currentUser.role === 'mentor' && <MentorDashboard embedded={true} />}
             </div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-              Statewide Network
-            </span>
-          </div>
-          <InnovationMap />
-        </section>
-
-        {/* Outposts & Mission Trackers */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <FamilyTracker />
-          <OutpostCenter />
-        </section>
-
-        {/* Success Stories & Innovation Challenges */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Innovation Challenges */}
-          <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Trophy className="w-4.5 h-4.5 text-emerald-500" />
-              Active Innovation Challenges
-            </h2>
-            <div className="space-y-4">
-              {CHALLENGES.map((challenge) => (
-                <div 
-                  key={challenge.title}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 hover:border-slate-350 dark:hover:border-slate-700 transition-colors flex justify-between gap-4 shadow-sm"
-                >
-                  <div className="text-xs">
-                    <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                      <span>{challenge.dept}</span>
-                      <span className="text-emerald-500 bg-emerald-500/10 px-1 py-0.5 rounded">
-                        {challenge.grant}
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-slate-900 dark:text-white mt-1.5 mb-1">
-                      {challenge.title}
-                    </h3>
-                    <p className="text-slate-500 dark:text-slate-400 leading-normal text-[11px]">
-                      {challenge.desc}
-                    </p>
+          ) : (
+            <>
+              {/* Hero Section */}
+              <section className="relative py-12 px-6 sm:px-12 text-center text-white">
+                <div className="relative z-10 max-w-4xl mx-auto space-y-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold uppercase tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    AP Startup Policy 2021-2026 Active Portal
                   </div>
-                  <div className="text-right shrink-0 flex flex-col justify-between items-end text-[10px]">
-                    <span className="text-slate-400 font-semibold">{challenge.deadline}</span>
-                    <Link href="/register" className="text-emerald-500 font-bold hover:underline">
-                      Apply →
+                  
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight text-white drop-shadow-md">
+                    Transforming Andhra Pradesh into a <br className="hidden md:inline" />
+                    <span className="text-emerald-400">
+                      Global Startup Powerhouse
+                    </span>
+                  </h1>
+
+                  <p className="text-xs sm:text-sm md:text-base text-slate-200 max-w-2xl mx-auto font-semibold leading-relaxed drop-shadow-sm">
+                    Welcome to RTIH InnovationOS. Empowering Innovation. Enabling Growth. The central operating system linking AP founders, universities, outposts, and global capital networks.
+                  </p>
+
+                  <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+                    <Link 
+                      href="/login" 
+                      className="px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all border border-emerald-400/40"
+                    >
+                      Access Portal (Sign In) <ArrowRight className="w-4 h-4 text-emerald-100" />
+                    </Link>
+                    <Link
+                      href="/register"
+                      className="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 border border-white/25 transition-all backdrop-blur-sm"
+                    >
+                      Apply for Incubation
+                    </Link>
+                    <Link
+                      href="/apply"
+                      className="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 border border-white/25 transition-all backdrop-blur-sm"
+                    >
+                      Find Jobs
                     </Link>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              </section>
 
-          {/* Success Stories */}
-          <div className="space-y-4">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Target className="w-4.5 h-4.5 text-emerald-500" />
-              Success Stories
-            </h2>
-            <div className="space-y-4">
-              {STORIES.map((story) => (
-                <div 
-                  key={story.title}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm text-xs flex flex-col justify-between"
-                >
+              {/* Hero Goal Metrics Scorecard */}
+              <section className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto w-full">
+                {HERO_STATS.map((stat) => {
+                  const Icon = stat.icon;
+                  return (
+                    <div 
+                      key={stat.label} 
+                      className="p-4 text-center text-white group hover:scale-[1.03] transition-all duration-300"
+                    >
+                      <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-500/10 mx-auto text-emerald-400 border border-emerald-500/20 shadow-inner group-hover:bg-emerald-500/20 transition-colors">
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <h3 className="text-xl md:text-2xl font-black text-white mt-3">
+                        {stat.count}
+                      </h3>
+                      <p className="text-[10px] font-bold text-slate-350 mt-1 uppercase tracking-wider">
+                        {stat.label}
+                      </p>
+                      <p className="text-[9px] text-slate-400 mt-1 hidden sm:block leading-tight">
+                        {stat.desc}
+                      </p>
+                    </div>
+                  );
+                })}
+              </section>
+
+              {/* Hub & Spoke Regional Map Section */}
+              <section className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
                   <div>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{story.district}</span>
-                    <h3 className="font-bold text-slate-900 dark:text-white mt-1 mb-2 leading-tight">
-                      {story.title}
-                    </h3>
-                    <p className="text-slate-500 dark:text-slate-400 leading-relaxed text-[11px]">
-                      {story.summary}
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-emerald-400" />
+                      RTIH Hub & Spoke Infrastructure Map
+                    </h2>
+                    <p className="text-xs text-slate-305">
+                      Amaravati (Central Hub) linking five Regional Innovation Centers to distribute resources statewide.
                     </p>
                   </div>
-                  <div className="border-t border-slate-100 dark:border-slate-800 pt-2.5 mt-3 text-right">
-                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded">
-                      RTIH Case Study
-                    </span>
+                  <span className="text-[10px] font-bold text-slate-200 uppercase tracking-widest bg-white/10 border border-white/15 px-2 py-0.5 rounded">
+                    Statewide Network
+                  </span>
+                </div>
+                <InnovationMap />
+              </section>
+
+              {/* Outposts & Mission Trackers */}
+              <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <FamilyTracker />
+                <OutpostCenter />
+              </section>
+
+              {/* Success Stories & Innovation Challenges */}
+              <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Innovation Challenges */}
+                <div className="lg:col-span-2 space-y-4">
+                  <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Trophy className="w-4.5 h-4.5 text-emerald-400" />
+                    Active Innovation Challenges
+                  </h2>
+                  <div className="space-y-4">
+                    {CHALLENGES.map((challenge) => (
+                      <div 
+                        key={challenge.title}
+                        className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-xl p-4 hover:border-emerald-500/30 transition-colors flex justify-between gap-4 shadow-lg text-white"
+                      >
+                        <div className="text-xs">
+                          <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                            <span>{challenge.dept}</span>
+                            <span className="text-emerald-400 bg-emerald-500/20 px-1 py-0.5 rounded border border-emerald-500/30">
+                              {challenge.grant}
+                            </span>
+                          </div>
+                          <h3 className="font-bold text-white mt-1.5 mb-1">
+                            {challenge.title}
+                          </h3>
+                          <p className="text-slate-300 leading-normal text-[11px]">
+                            {challenge.desc}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0 flex flex-col justify-between items-end text-[10px]">
+                          <span className="text-slate-400 font-semibold">{challenge.deadline}</span>
+                          <Link href="/register" className="text-emerald-400 font-bold hover:underline">
+                            Apply →
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
-        {/* Partners Showcase */}
-        <section className="bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl p-6 text-center">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
-            Partner Ecosystem & Knowledge Network
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 items-center justify-center opacity-65 dark:opacity-50">
-            <span className="font-extrabold text-sm text-slate-500 tracking-wider">TATA GROUP</span>
-            <span className="font-extrabold text-sm text-slate-500 tracking-wider">IIT TIRUPATI</span>
-            <span className="font-extrabold text-sm text-slate-500 tracking-wider">SRM UNIV AP</span>
-            <span className="font-extrabold text-sm text-slate-500 tracking-wider">AP STATE INN SOC</span>
-            <span className="font-extrabold text-sm text-slate-500 tracking-wider">Y COMBINATOR</span>
-            <span className="font-extrabold text-sm text-slate-500 tracking-wider">T-HUB ADVISORS</span>
-          </div>
-        </section>
-      </main>
+                {/* Success Stories */}
+                <div className="space-y-4">
+                  <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Target className="w-4.5 h-4.5 text-emerald-400" />
+                    Success Stories
+                  </h2>
+                  <div className="space-y-4">
+                    {STORIES.map((story) => (
+                      <div 
+                        key={story.title}
+                        className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-xl p-4 shadow-lg text-xs flex flex-col justify-between text-white"
+                      >
+                        <div>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{story.district}</span>
+                          <h3 className="font-bold text-white mt-1 mb-2 leading-tight">
+                            {story.title}
+                          </h3>
+                          <p className="text-slate-300 leading-relaxed text-[11px]">
+                            {story.summary}
+                          </p>
+                        </div>
+                        <div className="border-t border-white/10 pt-2.5 mt-3 text-right">
+                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">
+                            RTIH Case Study
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+            </>
+          )}
+        </main>
+      </div>
 
       {/* Government Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-8 text-center text-xs text-slate-400">
-        <p className="font-medium text-slate-600 dark:text-slate-300">
-          Ratan Tata Innovation Hub (RTIH) • Government of Andhra Pradesh
-        </p>
-        <div className="flex items-center justify-center gap-6 mt-3 text-[11px]">
-          <a href="/register" className="hover:text-emerald-600 font-semibold transition-colors">Apply for Incubation</a>
-          <a href="/apply" className="hover:text-emerald-600 font-semibold transition-colors">Find Jobs</a>
-          <a href="/alumni" className="hover:text-emerald-600 font-semibold transition-colors">Alumni Network</a>
-          <a href="/login" className="hover:text-emerald-600 font-semibold transition-colors">Sign In</a>
-        </div>
-        <p className="mt-3 text-[10px]">
-          Digital Operating System designed for Startup Policy implementation. All rights reserved © 2026.
-        </p>
-      </footer>
+      {!currentUser && (
+        <footer className="border-t border-white/10 bg-slate-950/40 backdrop-blur-md py-8 text-center text-xs text-slate-305 relative z-10">
+          <p className="font-medium text-white">
+            Ratan Tata Innovation Hub (RTIH) • Government of Andhra Pradesh
+          </p>
+          <div className="flex items-center justify-center gap-6 mt-3 text-[11px]">
+            <a href="/register" className="hover:text-emerald-400 font-semibold transition-colors text-slate-200">Apply for Incubation</a>
+            <a href="/apply" className="hover:text-emerald-400 font-semibold transition-colors text-slate-200">Find Jobs</a>
+            <a href="/alumni" className="hover:text-emerald-400 font-semibold transition-colors text-slate-200">Alumni Network</a>
+            <a href="/login" className="hover:text-emerald-400 font-semibold transition-colors text-slate-200">Sign In</a>
+          </div>
+          <p className="mt-3 text-[10px] text-slate-400">
+            Digital Operating System designed for Startup Policy implementation. All rights reserved © 2026.
+          </p>
+        </footer>
+      )}
     </div>
   );
 }

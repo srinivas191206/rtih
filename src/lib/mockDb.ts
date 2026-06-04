@@ -511,7 +511,10 @@ export const DISTRICTS = [
   'Srikakulam',
   'YSR Kadapa',
   'West Godavari',
-  'Chittoor'
+  'Chittoor',
+  'Kakinada',
+  'Palnadu',
+  'Eluru'
 ];
 
 // High-fidelity local startup names based on AP context
@@ -534,18 +537,20 @@ const STARTUP_SUFFIX = ['Systems', 'Analytics', 'Robotics', 'Space', 'Dynamics',
 const FIRST_NAMES = ['Ramesh', 'Suresh', 'Venkatesh', 'Kalyani', 'Radha', 'Srinivas', 'Satish', 'Sai', 'Divya', 'Pavan', 'Chandra', 'Madhav', 'Lakshmi', 'Anirudh'];
 const LAST_NAMES = ['Koppula', 'Yalamanchili', 'Bhimavarapu', 'Koneru', 'Devineni', 'Galla', 'Palla', 'Jasti', 'Katragadda', 'Sunkara', 'Mylavarapu'];
 
-const UNIVERSITIES_LIST = [
-  'Andhra University',
-  'Sri Venkateswara University',
-  'JNTU Anantapur',
-  'JNTU Kakinada',
-  'Gitam University',
-  'K L University',
-  'Acharya Nagarjuna University',
-  'SRM University AP',
-  'VIT AP University',
-  'IIT Tirupati',
-  'NIT Andhra Pradesh'
+const UNIVERSITIES_MAP = [
+  { name: 'JNTU Kakinada', district: 'Kakinada' },
+  { name: 'Andhra University', district: 'Visakhapatnam' },
+  { name: 'Acharya Nagarjuna University', district: 'Guntur' },
+  { name: 'Sri Venkateswara University', district: 'Tirupati' },
+  { name: 'NIT Andhra Pradesh', district: 'West Godavari' },
+  { name: 'SRM AP University', district: 'Palnadu' },
+  { name: 'VIT AP University', district: 'Guntur' },
+  { name: 'KL University', district: 'Guntur' },
+  { name: 'GITAM University', district: 'Visakhapatnam' },
+  { name: 'Adikavi Nannaya University', district: 'East Godavari' },
+  { name: 'RGUKT Nuzvid', district: 'Eluru' },
+  { name: 'RGUKT RK Valley', district: 'YSR Kadapa' },
+  { name: 'IIIT Sri City', district: 'Tirupati' }
 ];
 
 export const SPOKES = [
@@ -619,13 +624,12 @@ function generateInitialData(demoMode = false): {
   };
 
   // 1. Generate Universities
-  const universities: University[] = UNIVERSITIES_LIST.map((univName, idx) => {
-    const district = rng.nextElement(DISTRICTS);
+  const universities: University[] = UNIVERSITIES_MAP.map((uni, idx) => {
     return {
       id: `univ-${idx + 1}`,
-      name: univName,
-      district,
-      innovationCell: `${univName} Innovation Cell`,
+      name: uni.name,
+      district: uni.district,
+      innovationCell: `${uni.name} Innovation Cell`,
       studentCount: rng.nextRange(8000, 25000),
       startupsCount: 0,
       foundersCount: 0,
@@ -1205,18 +1209,18 @@ function generateInitialData(demoMode = false): {
   const generatedMentorNames = new Set<string>();
 
   const cityMentors = [
-    { name: 'Vizag Mentor 1', district: 'Visakhapatnam', email: 'vizag.mentor1@rtihmentor.in', expertise: ['Medtech', 'Blue economy'] },
-    { name: 'Vizag Mentor 2', district: 'Visakhapatnam', email: 'vizag.mentor2@rtihmentor.in', expertise: ['Biotech', 'Fintech'] },
-    { name: 'Vijayawada Mentor 1', district: 'NTR', email: 'vijayawada.mentor1@rtihmentor.in', expertise: ['Industrial IoT', 'Construction Technology'] },
-    { name: 'Vijayawada Mentor 2', district: 'Krishna', email: 'vijayawada.mentor2@rtihmentor.in', expertise: ['Agri Technology', 'Auto-Body Building/Light Engineering'] },
-    { name: 'Rajamahendravaram Mentor 1', district: 'East Godavari', email: 'rajamundry.mentor1@rtihmentor.in', expertise: ['Food Processing', 'Energy Transition'] },
-    { name: 'Rajamahendravaram Mentor 2', district: 'East Godavari', email: 'rajamundry.mentor2@rtihmentor.in', expertise: ['Aquaculture', 'Marine Tech'] },
-    { name: 'Ananthapuramu Mentor 1', district: 'Anantapur', email: 'ananthapuramu.mentor1@rtihmentor.in', expertise: ['Automotive & EV sys', 'Logistics-Warehousing'] },
-    { name: 'Ananthapuramu Mentor 2', district: 'Anantapur', email: 'ananthapuramu.mentor2@rtihmentor.in', expertise: ['Hybrid RE', 'Agri & Food Processing'] },
-    { name: 'Amaravati Mentor 1', district: 'Guntur', email: 'amaravati.mentor1@rtihmentor.in', expertise: ['Climate Tech', 'Blockchain'] },
-    { name: 'Amaravati Mentor 2', district: 'Guntur', email: 'amaravati.mentor2@rtihmentor.in', expertise: ['AVGC & XR', 'Health Care'] },
-    { name: 'Tirupati Mentor 1', district: 'Tirupati', email: 'tirupati.mentor1@rtihmentor.in', expertise: ['Battery & Adv. Manufacturing', 'Space Tech'] },
-    { name: 'Tirupati Mentor 2', district: 'Tirupati', email: 'tirupati.mentor2@rtihmentor.in', expertise: ['Electronics Cluster', 'Horti Tech & Diary'] }
+    { name: 'Dr. A. Srinivas Rao', district: 'Visakhapatnam', email: 'vizag.mentor1@rtihmentor.in', expertise: ['Medtech', 'Blue economy'] },
+    { name: 'Prof. G. Veerraju', district: 'Visakhapatnam', email: 'vizag.mentor2@rtihmentor.in', expertise: ['Biotech', 'Fintech'] },
+    { name: 'Dr. M. Sridhar', district: 'NTR', email: 'vijayawada.mentor1@rtihmentor.in', expertise: ['Industrial IoT', 'Construction Technology'] },
+    { name: 'Smt. K. Rama Devi', district: 'Krishna', email: 'vijayawada.mentor2@rtihmentor.in', expertise: ['Agri Technology', 'Auto-Body Building/Light Engineering'] },
+    { name: 'Sri P. Venkateswara Rao', district: 'East Godavari', email: 'rajamundry.mentor1@rtihmentor.in', expertise: ['Food Processing', 'Energy Transition'] },
+    { name: 'Dr. N. Mangadevi', district: 'East Godavari', email: 'rajamundry.mentor2@rtihmentor.in', expertise: ['Aquaculture', 'Marine Tech'] },
+    { name: 'Prof. K. Hemachandra Reddy', district: 'Anantapur', email: 'ananthapuramu.mentor1@rtihmentor.in', expertise: ['Automotive & EV sys', 'Logistics-Warehousing'] },
+    { name: 'Dr. C. R. Giridhar', district: 'Anantapur', email: 'ananthapuramu.mentor2@rtihmentor.in', expertise: ['Hybrid RE', 'Agri & Food Processing'] },
+    { name: 'Sri J. A. Chowdary', district: 'Guntur', email: 'amaravati.mentor1@rtihmentor.in', expertise: ['Climate Tech', 'Blockchain'] },
+    { name: 'Dr. T. Lasya', district: 'Guntur', email: 'amaravati.mentor2@rtihmentor.in', expertise: ['AVGC & XR', 'Health Care'] },
+    { name: 'Prof. S. R. S. Prasanna', district: 'Tirupati', email: 'tirupati.mentor1@rtihmentor.in', expertise: ['Battery & Adv. Manufacturing', 'Space Tech'] },
+    { name: 'Dr. V. R. K. Prasad', district: 'Tirupati', email: 'tirupati.mentor2@rtihmentor.in', expertise: ['Electronics Cluster', 'Horti Tech & Diary'] }
   ];
 
   // Prepend city-specific mentors
@@ -1462,6 +1466,16 @@ function generateInitialData(demoMode = false): {
         issuedAt: '2026-06-01T10:00:00Z'
       });
     }
+    // Startup Leadership Certificate for scale stage
+    if (s.stage === 'scale') {
+      certifications.push({
+        id: `cert-${s.id}-5`,
+        certificateId: `RTIH-CERT-2026-${1000 + idx}-5`,
+        startupId: s.id,
+        type: 'Startup Leadership',
+        issuedAt: '2026-06-03T10:00:00Z'
+      });
+    }
   });
 
   // 11. Watchlists
@@ -1627,12 +1641,12 @@ function generateInitialData(demoMode = false): {
 
   // NEW: Incubation Centers
   const incubationCenters: IncubationCenter[] = [
-    { id: 'center-1', name: 'RTIH Tirupati Hub', location: 'Tirupati', domains: ['Battery & Adv. Manufacturing', 'Electronics Cluster', 'Horti Tech & Diary', 'Space Tech'], managerId: 'manager@rtih.ap.gov.in', managerName: 'K. Lakshmi Narayana', activeStartups: 18, capacity: 30 },
-    { id: 'center-2', name: 'RTIH Rajamahendravaram Hub', location: 'Rajamahendravaram', domains: ['Food Processing', 'Marine Tech', 'Aquaculture', 'Energy Transition'], managerId: 'manager@rtih.ap.gov.in', managerName: 'K. Lakshmi Narayana', activeStartups: 24, capacity: 40 },
-    { id: 'center-3', name: 'RTIH Visakhapatnam Hub', location: 'Visakhapatnam', domains: ['Medtech', 'Fintech', 'Biotech', 'Blue economy', 'Smart Infra'], managerId: 'manager@rtih.ap.gov.in', managerName: 'K. Lakshmi Narayana', activeStartups: 22, capacity: 35 },
-    { id: 'center-4', name: 'RTIH Amaravati Central Hub', location: 'Amaravati', domains: ['Climate Tech', 'Blockchain', 'AVGC & XR', 'Health Care', 'Urban Systems', 'Supply Chain'], managerId: 'manager@rtih.ap.gov.in', managerName: 'K. Lakshmi Narayana', activeStartups: 15, capacity: 25 },
-    { id: 'center-5', name: 'RTIH Vijayawada Hub', location: 'Vijayawada', domains: ['Industrial IoT', 'Agri Technology', 'Auto-Body Building/Light Engineering', 'Construction Technology'], managerId: 'manager@rtih.ap.gov.in', managerName: 'K. Lakshmi Narayana', activeStartups: 14, capacity: 30 },
-    { id: 'center-6', name: 'RTIH Ananthapuramu Hub', location: 'Ananthapuramu', domains: ['Automotive & EV sys', 'Hybrid RE', 'Agri & Food Processing', 'Logistics-Warehousing', 'Defence & Aerospace'], managerId: 'manager@rtih.ap.gov.in', managerName: 'K. Lakshmi Narayana', activeStartups: 12, capacity: 30 }
+    { id: 'center-1', name: 'RTIH Tirupati Hub', location: 'Tirupati', domains: ['Battery & Adv. Manufacturing', 'Electronics Cluster', 'Horti Tech & Diary', 'Space Tech'], managerId: 'manager.tirupati@rtih.ap.gov.in', managerName: 'Prof. S. R. Venkat Raman', activeStartups: 18, capacity: 30 },
+    { id: 'center-2', name: 'RTIH Rajamahendravaram Hub', location: 'Rajamahendravaram', domains: ['Food Processing', 'Marine Tech', 'Aquaculture', 'Energy Transition'], managerId: 'manager.rajamahendravaram@rtih.ap.gov.in', managerName: 'K. Lakshmi Narayana', activeStartups: 24, capacity: 40 },
+    { id: 'center-3', name: 'RTIH Visakhapatnam Hub', location: 'Visakhapatnam', domains: ['Medtech', 'Fintech', 'Biotech', 'Blue economy', 'Smart Infra'], managerId: 'manager.vizag@rtih.ap.gov.in', managerName: 'Dr. Srinivas Prasad', activeStartups: 22, capacity: 35 },
+    { id: 'center-4', name: 'RTIH Amaravati Central Hub', location: 'Amaravati', domains: ['Climate Tech', 'Blockchain', 'AVGC & XR', 'Health Care', 'Urban Systems', 'Supply Chain'], managerId: 'manager.amaravati@rtih.ap.gov.in', managerName: 'Sri L. Premchandra Reddy, IAS', activeStartups: 15, capacity: 25 },
+    { id: 'center-5', name: 'RTIH Vijayawada Hub', location: 'Vijayawada', domains: ['Industrial IoT', 'Agri Technology', 'Auto-Body Building/Light Engineering', 'Construction Technology'], managerId: 'manager.vijayawada@rtih.ap.gov.in', managerName: 'G. Rama Chandra Murthy', activeStartups: 14, capacity: 30 },
+    { id: 'center-6', name: 'RTIH Ananthapuramu Hub', location: 'Ananthapuramu', domains: ['Automotive & EV sys', 'Hybrid RE', 'Agri & Food Processing', 'Logistics-Warehousing', 'Defence & Aerospace'], managerId: 'manager.ananthapuramu@rtih.ap.gov.in', managerName: 'B. R. K. Prasad', activeStartups: 12, capacity: 30 }
   ];
 
   // NEW: Departments
@@ -1794,6 +1808,11 @@ export class MockDatabase {
               this.data = generateInitialData(true);
               this.save(true);
             }
+          }
+          // Force regeneration if university data is outdated (less than 13 universities or missing mapping)
+          if (this.data && (!this.data.universities || this.data.universities.length < 13)) {
+            this.data = generateInitialData(true);
+            this.save(true);
           }
           // Ensure new collections exist (for cached data from older versions)
           if (!this.data.applications) this.data.applications = [];

@@ -89,7 +89,7 @@ export default function InnovationMapInner() {
   const spokes = centers.filter(c => c.type === 'Spoke');
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 w-full bg-slate-900/40 border border-white/10 backdrop-blur-md rounded-xl p-4 shadow-lg text-white">
       {/* Map Element */}
       <div className="lg:col-span-3 h-[400px] md:h-[500px] relative z-10">
         <MapContainer
@@ -117,7 +117,7 @@ export default function InnovationMapInner() {
               <Popup>
                 <div className="text-xs p-1">
                   <p className="font-bold text-slate-800 dark:text-slate-100">{center.name}</p>
-                  <p className="text-slate-500">{center.type} Center</p>
+                  <p className="text-slate-550">{center.type} Center</p>
                   <p className="font-semibold text-emerald-600 mt-1">Startups: {center.incubated}</p>
                 </div>
               </Popup>
@@ -144,80 +144,80 @@ export default function InnovationMapInner() {
       </div>
 
       {/* Sidebar Details Panel */}
-      <div className="flex flex-col justify-between h-full bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60 rounded-lg p-5">
+      <div className="flex flex-col justify-between h-full bg-white/5 border border-white/10 rounded-lg p-5">
         {selectedCenter ? (
           <div>
             <div className="flex items-center gap-2 mb-3">
               <span className={`px-2 py-0.5 text-[9px] font-bold uppercase rounded ${
                 selectedCenter.type === 'Hub' 
-                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' 
-                  : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                  : 'bg-blue-500/20 text-blue-305 border border-blue-500/30'
               }`}>
                 {selectedCenter.type}
               </span>
-              <p className="text-[10px] font-bold text-slate-400">RTIH NETWORK</p>
+              <p className="text-[10px] font-bold text-slate-350">RTIH NETWORK</p>
             </div>
             
-            <h3 className="font-bold text-lg text-slate-900 dark:text-white leading-tight mb-4">
+            <h3 className="font-bold text-lg text-white leading-tight mb-4">
               {selectedCenter.name}
             </h3>
 
             <div className="space-y-4 mb-6">
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded bg-white dark:bg-slate-800 text-emerald-500 border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="flex items-center justify-center w-8 h-8 rounded bg-white/10 text-emerald-400 border border-white/10 shadow-inner">
                   <Building2 className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Incubated Startups</p>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedCenter.incubated}</p>
+                  <p className="text-[10px] text-slate-300 font-medium">Incubated Startups</p>
+                  <p className="text-sm font-bold text-white">{selectedCenter.incubated}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded bg-white dark:bg-slate-800 text-blue-500 border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="flex items-center justify-center w-8 h-8 rounded bg-white/10 text-blue-405 border border-white/10 shadow-inner">
                   <Network className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Regional Programs</p>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedCenter.programs}</p>
+                  <p className="text-[10px] text-slate-300 font-medium">Regional Programs</p>
+                  <p className="text-sm font-bold text-white">{selectedCenter.programs}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded bg-white dark:bg-slate-800 text-purple-500 border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="flex items-center justify-center w-8 h-8 rounded bg-white/10 text-purple-400 border border-white/10 shadow-inner">
                   <TrendingUp className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Ecosystem Engagement</p>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedCenter.engagement}%</p>
+                  <p className="text-[10px] text-slate-300 font-medium">Ecosystem Engagement</p>
+                  <p className="text-sm font-bold text-white">{selectedCenter.engagement}%</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="flex items-center justify-center w-8 h-8 rounded bg-white/10 text-slate-300 border border-white/10 shadow-inner">
                   <Users className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Outpost Lead</p>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-300 leading-tight">
+                  <p className="text-[10px] text-slate-300 font-medium">Outpost Lead</p>
+                  <p className="text-xs font-semibold text-white leading-tight">
                     {selectedCenter.lead}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="p-3 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg text-[10px] text-slate-500 leading-relaxed">
-              <ShieldCheck className="w-4 h-4 text-emerald-500 inline mr-1" />
+            <div className="p-3 bg-white/5 border border-white/10 rounded-lg text-[10px] text-slate-300 leading-relaxed">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 inline mr-1" />
               Verified RTIH facility active within local AP district limits.
             </div>
           </div>
         ) : (
-          <div className="text-center py-10 text-xs text-slate-400">
+          <div className="text-center py-10 text-xs text-slate-300">
             Click on a marker to view outpost details.
           </div>
         )}
 
-        <div className="text-[9px] text-slate-400 border-t border-slate-200 dark:border-slate-700/60 pt-4 mt-6">
+        <div className="text-[9px] text-slate-300 border-t border-white/10 pt-4 mt-6">
           RTIH utilizes the Amaravati Central Hub to orchestrate specialized programmatic resources to local outposts.
         </div>
       </div>

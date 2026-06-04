@@ -135,7 +135,68 @@ const LMM_COURSES = [
   }
 ];
 
-export default function FounderDashboard() {
+// Helper functions for rendering Markdown in chatbot messages
+const parseInlineMarkdown = (text: string) => {
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={idx} className="font-extrabold text-slate-900">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={idx} className="italic text-slate-800">{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+};
+
+const renderMarkdown = (text: string) => {
+  const lines = text.split('\n');
+  return lines.map((line, lineIdx) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      return <div key={lineIdx} className="h-2" />;
+    }
+
+    if (trimmed.startsWith('### ')) {
+      const headingText = trimmed.replace('### ', '');
+      return (
+        <h4 key={lineIdx} className="text-xs font-black text-slate-900 mt-2.5 mb-1.5 flex items-center gap-1">
+          {parseInlineMarkdown(headingText)}
+        </h4>
+      );
+    }
+
+    if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+      const bulletText = trimmed.substring(2);
+      return (
+        <div key={lineIdx} className="flex items-start gap-1.5 pl-2 my-0.5 text-xs text-slate-700 leading-relaxed">
+          <span className="text-emerald-500 font-bold text-sm leading-none">•</span>
+          <span className="flex-1">{parseInlineMarkdown(bulletText)}</span>
+        </div>
+      );
+    }
+
+    const matchNumbered = trimmed.match(/^(\d+)\.\s(.*)/);
+    if (matchNumbered) {
+      const num = matchNumbered[1];
+      const itemText = matchNumbered[2];
+      return (
+        <div key={lineIdx} className="flex items-start gap-1.5 pl-2 my-0.5 text-xs text-slate-700 leading-relaxed">
+          <span className="text-emerald-600 font-bold leading-none">{num}.</span>
+          <span className="flex-1">{parseInlineMarkdown(itemText)}</span>
+        </div>
+      );
+    }
+
+    return (
+      <p key={lineIdx} className="text-xs text-slate-700 my-1 leading-relaxed">
+        {parseInlineMarkdown(line)}
+      </p>
+    );
+  });
+};
+
+export default function FounderDashboard({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
   
@@ -147,6 +208,7 @@ export default function FounderDashboard() {
   const [db, setDb] = useState(() => getDb());
   const [execActive, setExecActive] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [renderTrigger, setRenderTrigger] = useState(0);
   
   // Tab states to resolve overlapping issues
   const [activeTab, setActiveTab] = useState<'overview' | 'health' | 'lmm' | 'certificates' | 'hackathons' | 'network' | 'copilot' | 'linkages' | 'traction' | 'organization' | 'tasks' | 'documents' | 'communications' | 'recruitment' | 'metrics' | 'mentors'>('overview');
@@ -272,6 +334,7 @@ export default function FounderDashboard() {
     const activeDb = getDb();
     setDb(activeDb);
     setExecActive(isExecutiveModeActive());
+    setRenderTrigger(prev => prev + 1);
   };
 
   // Login check and context lock
@@ -1153,10 +1216,10 @@ export default function FounderDashboard() {
   if (!isMounted) return null;
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
-      <Navigation />
+    <div className={embedded ? "w-full text-slate-800" : "flex flex-col min-h-screen bg-slate-50"}>
+      {!embedded && <Navigation />}
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className={embedded ? "w-full py-4 space-y-6" : "flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6"}>
         
         {/* Header Console */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5 bg-white p-6 rounded-2xl shadow-sm">
@@ -2762,7 +2825,7 @@ export default function FounderDashboard() {
                         ? 'bg-emerald-500 text-white font-medium rounded-tr-none'
                         : 'bg-white border border-slate-200/50 text-slate-800 rounded-tl-none'
                     }`}>
-                      {chat.text}
+                      {chat.sender === 'user' ? chat.text : renderMarkdown(chat.text)}
                     </div>
                   </div>
                 ))}

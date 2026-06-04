@@ -2,7 +2,24 @@
 
 import { useMemo } from 'react';
 import { getDb } from '@/lib/mockDb';
-import { GraduationCap, Award, Compass, Calendar, Target, ShieldAlert } from 'lucide-react';
+import { GraduationCap, ShieldAlert } from 'lucide-react';
+
+const getUniversityDistrictDisplay = (name: string, district: string) => {
+  if (name === 'NIT Andhra Pradesh') return 'West Godavari District (Tadepalligudem)';
+  if (name === 'SRM AP University') return 'Palnadu District (Neerukonda)';
+  if (name === 'VIT AP University') return 'Guntur District (Amaravati)';
+  if (name === 'KL University') return 'Guntur District (Vaddeswaram)';
+  if (name === 'Adikavi Nannaya University') return 'East Godavari District (Rajamahendravaram)';
+  if (name === 'JNTU Kakinada') return 'Kakinada District';
+  if (name === 'Andhra University') return 'Visakhapatnam District';
+  if (name === 'Acharya Nagarjuna University') return 'Guntur District';
+  if (name === 'Sri Venkateswara University') return 'Tirupati District';
+  if (name === 'GITAM University') return 'Visakhapatnam District';
+  if (name === 'RGUKT Nuzvid') return 'Eluru District';
+  if (name === 'RGUKT RK Valley') return 'YSR Kadapa District';
+  if (name === 'IIIT Sri City') return 'Tirupati District';
+  return `${district} District`;
+};
 
 export default function OutpostCenter() {
   const data = useMemo(() => {
@@ -19,63 +36,62 @@ export default function OutpostCenter() {
   }, []);
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
-      <div className="border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
-        <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <GraduationCap className="w-5 h-5 text-emerald-500" />
+    <div className="bg-slate-900/40 border border-white/10 backdrop-blur-md rounded-xl p-5 shadow-lg text-white">
+      <div className="border-b border-white/10 pb-4 mb-5">
+        <h2 className="text-base font-bold text-white flex items-center gap-2">
+          <GraduationCap className="w-5 h-5 text-emerald-400" />
           RTIH Regional Outposts & University Cells
         </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-slate-300 mt-1">
           Monitor performance metrics, founder pipelines, and program engagements across AP academic institutions.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Outposts Performance Grid */}
-        <div>
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+        <div className="flex flex-col">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">
             Regional Innovation Centers Performance
           </h3>
-          <div className="space-y-3">
+          <div className="flex-1 flex flex-col gap-3">
             {data.outposts.map((outpost) => (
               <div
                 key={outpost.id}
-                className="p-3.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-800/60 rounded-xl flex items-center justify-between text-xs"
+                className="relative p-4 bg-white/5 border border-white/10 rounded-xl grid grid-cols-12 gap-4 items-center min-h-[76px] hover:border-emerald-500/30 transition-colors text-xs text-white"
               >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-900 dark:text-white">{outpost.name}</span>
-                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                      Rank #{outpost.rank}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-slate-400 mt-1">Lead: {outpost.leadName}</p>
+                {/* Left Column: Name & Lead */}
+                <div className="col-span-6 pr-10">
+                  <h4 className="font-bold text-xs text-white leading-tight">
+                    {outpost.name} Regional Center
+                  </h4>
+                  <p className="text-[10px] text-slate-400 mt-1 font-normal leading-none">
+                    Lead: {outpost.leadName}
+                  </p>
                 </div>
-
-                <div className="flex items-center gap-6">
-                  <div className="text-center">
-                    <p className="font-bold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-1">
-                      <Target className="w-3.5 h-3.5 text-emerald-500" />
-                      {outpost.incubatedCount}
-                    </p>
-                    <p className="text-[8px] text-slate-400 uppercase font-medium">Startups</p>
-                  </div>
-
-                  <div className="text-center">
-                    <p className="font-bold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-blue-500" />
-                      {outpost.programsCount}
-                    </p>
-                    <p className="text-[8px] text-slate-400 uppercase font-medium">Programs</p>
-                  </div>
-
-                  <div className="text-center">
-                    <p className="font-bold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-1">
-                      <Compass className="w-3.5 h-3.5 text-purple-500" />
+                
+                {/* Middle Column: Metrics */}
+                <div className="col-span-3 text-left">
+                  <p className="text-[11px] font-bold text-white leading-none">
+                    {outpost.incubatedCount} Startups
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-normal mt-1 leading-none">
+                    {outpost.programsCount} Programs
+                  </p>
+                </div>
+                
+                {/* Right Column: Performance Badge */}
+                <div className="col-span-3 flex justify-end">
+                  <div className="w-[68px] py-1.5 bg-purple-500/10 border border-purple-500/25 rounded text-center shrink-0">
+                    <p className="text-[11px] font-black text-purple-400 leading-none">
                       {outpost.mentorEngagement}%
                     </p>
-                    <p className="text-[8px] text-slate-400 uppercase font-medium">Engagement</p>
+                    <p className="text-[7px] text-slate-400 uppercase mt-1 leading-none">Score</p>
                   </div>
+                </div>
+                
+                {/* Rank Badge */}
+                <div className="absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded text-[8px] font-bold bg-white/10 text-slate-200 leading-none">
+                  Rank #{outpost.rank}
                 </div>
               </div>
             ))}
@@ -83,42 +99,49 @@ export default function OutpostCenter() {
         </div>
 
         {/* University Innovation Rankings */}
-        <div>
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+        <div className="flex flex-col">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">
             University Innovation Cell Rankings
           </h3>
-          <div className="space-y-3">
+          <div className="flex-1 flex flex-col gap-3">
             {data.universities.map((uni, idx) => (
               <div
                 key={uni.id}
-                className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-lg flex items-center justify-between text-xs hover:border-slate-300 transition-colors"
+                className="relative p-4 bg-white/5 border border-white/10 rounded-xl grid grid-cols-12 gap-4 items-center min-h-[76px] hover:border-emerald-500/30 transition-colors text-xs text-white"
               >
-                <div className="flex items-center gap-3">
-                  <span className="w-5 h-5 rounded-full flex items-center justify-center bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold text-[10px]">
-                    {idx + 1}
-                  </span>
-                  <div>
-                    <p className="font-semibold text-slate-900 dark:text-white leading-tight">
-                      {uni.name}
-                    </p>
-                    <p className="text-[9px] text-slate-400 mt-0.5">{uni.district} District</p>
-                  </div>
+                {/* Left Column: Name & District */}
+                <div className="col-span-6 pr-10">
+                  <h4 className="font-bold text-xs text-white leading-tight">
+                    {uni.name}
+                  </h4>
+                  <p className="text-[10px] text-slate-400 mt-1 font-normal leading-none truncate">
+                    {getUniversityDistrictDisplay(uni.name, uni.district)}
+                  </p>
                 </div>
-
-                <div className="flex items-center gap-4 text-right">
-                  <div>
-                    <p className="font-bold text-slate-800 dark:text-slate-200">
-                      {uni.startupsCount} Startups
-                    </p>
-                    <p className="text-[9px] text-slate-400">{uni.foundersCount} Founders</p>
-                  </div>
-
-                  <div className="p-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-center min-w-[48px]">
-                    <p className="text-[10px] font-bold text-emerald-600 leading-none">
+                
+                {/* Middle Column: Metrics */}
+                <div className="col-span-3 text-left">
+                  <p className="text-[11px] font-bold text-white leading-none">
+                    {uni.startupsCount} Startups
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-normal mt-1 leading-none">
+                    {uni.foundersCount} Founders
+                  </p>
+                </div>
+                
+                {/* Right Column: Index Badge */}
+                <div className="col-span-3 flex justify-end">
+                  <div className="w-[68px] py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded text-center shrink-0">
+                    <p className="text-[11px] font-black text-emerald-400 leading-none">
                       {uni.innovationScore}
                     </p>
-                    <p className="text-[7px] text-slate-400 uppercase mt-0.5 leading-none">Index</p>
+                    <p className="text-[7px] text-slate-400 uppercase mt-1 leading-none">Index</p>
                   </div>
+                </div>
+                
+                {/* Rank Badge */}
+                <div className="absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded text-[8px] font-bold bg-white/10 text-slate-200 leading-none">
+                  Rank #{idx + 1}
                 </div>
               </div>
             ))}
@@ -126,7 +149,7 @@ export default function OutpostCenter() {
         </div>
       </div>
 
-      <div className="mt-5 p-3.5 bg-yellow-500/5 border border-yellow-500/15 rounded-lg text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed flex items-center gap-2">
+      <div className="mt-5 p-3.5 bg-yellow-500/10 border border-yellow-500/25 rounded-lg text-[10px] text-yellow-200 leading-relaxed flex items-center gap-2">
         <ShieldAlert className="w-4 h-4 text-yellow-500 shrink-0" />
         <span>University cell scores are computed based on operational incubation audits and student startup density.</span>
       </div>
