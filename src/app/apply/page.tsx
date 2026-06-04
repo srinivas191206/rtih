@@ -1,11 +1,23 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { getDb } from '@/lib/mockDb';
 import { Search, Briefcase, Clock, MapPin, ChevronRight, CheckCircle2, X } from 'lucide-react';
 
 export default function ApplyPage() {
   const [db] = useState(() => getDb());
+  const [renderTrigger, setRenderTrigger] = useState(0);
+
+  useEffect(() => {
+    const handleSync = () => {
+      setRenderTrigger(prev => prev + 1);
+    };
+    window.addEventListener('rtih_mode_change', handleSync);
+    return () => {
+      window.removeEventListener('rtih_mode_change', handleSync);
+    };
+  }, []);
+
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<'All' | 'Full Time' | 'Internship' | 'Part Time'>('All');
   const [selectedJob, setSelectedJob] = useState<any>(null);
@@ -21,7 +33,7 @@ export default function ApplyPage() {
         const startup = db.getStartup(j.startupId);
         return { ...j, startupName: startup?.name || 'RTIH Startup', sector: startup?.sector || '', district: startup?.district || '' };
       });
-  }, [db]);
+  }, [db, renderTrigger]);
 
   const filtered = useMemo(() => allJobs.filter(j => {
     const matchSearch = !search || j.title.toLowerCase().includes(search.toLowerCase()) || j.startupName.toLowerCase().includes(search.toLowerCase()) || j.skills.join(' ').toLowerCase().includes(search.toLowerCase());

@@ -1879,6 +1879,19 @@ export class MockDatabase {
     this.save();
   }
 
+  reload() {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem(MockDatabase.STORAGE_KEY);
+      if (cached) {
+        try {
+          this.data = JSON.parse(cached);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }
+
   private save(skipBackendSync = false) {
     if (typeof window !== 'undefined') {
       const oldStr = localStorage.getItem(MockDatabase.STORAGE_KEY);
@@ -2850,4 +2863,17 @@ export function setActiveUser(user: ActiveUser | null) {
     localStorage.removeItem('rtih_active_user');
   }
   window.dispatchEvent(new Event('rtih_user_change'));
+}
+
+// Global storage event listener to synchronize database and user state across multiple tabs
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'rtih_innovationos_db') {
+      getDb().reload();
+      window.dispatchEvent(new Event('rtih_mode_change'));
+    }
+    if (e.key === 'rtih_active_user') {
+      window.dispatchEvent(new Event('rtih_user_change'));
+    }
+  });
 }

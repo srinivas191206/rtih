@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { getDb, AlumniStartup, SECTORS, DISTRICTS } from '@/lib/mockDb';
 import { Trophy, TrendingUp, MapPin, Calendar, Users, ArrowRight, Search, Star } from 'lucide-react';
 import Navigation from '@/components/Navigation';
@@ -23,11 +23,23 @@ const STAGE_COLORS: Record<string, string> = {
 
 export default function AlumniPage() {
   const [db] = useState(() => getDb());
+  const [renderTrigger, setRenderTrigger] = useState(0);
+
+  useEffect(() => {
+    const handleSync = () => {
+      setRenderTrigger(prev => prev + 1);
+    };
+    window.addEventListener('rtih_mode_change', handleSync);
+    return () => {
+      window.removeEventListener('rtih_mode_change', handleSync);
+    };
+  }, []);
+
   const [search, setSearch] = useState('');
   const [sectorFilter, setSectorFilter] = useState('All');
   const [districtFilter, setDistrictFilter] = useState('All');
 
-  const alumni: AlumniStartup[] = useMemo(() => db.getAlumniStartups(), [db]);
+  const alumni: AlumniStartup[] = useMemo(() => db.getAlumniStartups(), [db, renderTrigger]);
 
   const filtered = useMemo(() => {
     return alumni.filter(a => {
