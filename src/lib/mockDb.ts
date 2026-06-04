@@ -1290,12 +1290,37 @@ function generateInitialData(demoMode = false): {
   }
 
   // 6. Generate Investors
-  const investors: Investor[] = [];
-  const generatedFirmNames = new Set<string>();
+  const investors: Investor[] = [
+    {
+      id: 'investor-1',
+      name: 'Suresh Naidu',
+      firmName: 'Amaravati Ventures',
+      email: 'suresh.naidu@amaravativentures.com',
+      avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=AmaravatiVentures',
+      stageFocus: ['pre-seed', 'seed', 'pre-series-a'],
+      sectorFocus: ['Agri Technology', 'MedTech', 'Clean Energy'],
+      minTicket: 2000000,
+      maxTicket: 25000000,
+      investmentsCount: 12
+    },
+    {
+      id: 'investor-2',
+      name: 'Priya Reddy',
+      firmName: 'Rayalaseema Angels',
+      email: 'priya.reddy@rayalaseemaangels.com',
+      avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=RayalaseemaAngels',
+      stageFocus: ['seed', 'pre-series-a', 'series-a'],
+      sectorFocus: ['MedTech', 'Clean Energy', 'Fintech'],
+      minTicket: 1000000,
+      maxTicket: 15000000,
+      investmentsCount: 8
+    }
+  ];
+  const generatedFirmNames = new Set<string>(['Amaravati Ventures', 'Rayalaseema Angels']);
   const FIRM_PREFIX = ['Amaravati', 'Godavari', 'Rayalaseema', 'Krishna', 'Tejas', 'Deccan', 'Andhra', 'Vanguard', 'Alpha'];
   const FIRM_SUFFIX = ['Capital', 'Ventures', 'Angels', 'Partners', 'Fund'];
 
-  for (let i = 0; i < 30; i++) {
+  for (let i = 2; i < 30; i++) {
     let firmName = `${rng.nextElement(FIRM_PREFIX)} ${rng.nextElement(FIRM_SUFFIX)}`;
     let attempts = 0;
     while (generatedFirmNames.has(firmName) && attempts < 10) {

@@ -8,6 +8,7 @@ import AdminCommandCenter from './admin/page';
 import FounderDashboard from './founder/page';
 import ProgramManagerDashboard from './manager/page';
 import MentorDashboard from './mentor/page';
+import InvestorDashboard from './investor/page';
 import { useState, useEffect } from 'react';
 import { getDb, isDemoModeActive, getActiveUser, setActiveUser } from '@/lib/mockDb';
 import { ArrowRight, Trophy, Landmark, Users, TrendingUp, Cpu, Globe, Target } from 'lucide-react';
@@ -131,6 +132,7 @@ export default function Home() {
               {currentUser.role === 'founder' && <FounderDashboard embedded={true} />}
               {currentUser.role === 'manager' && <ProgramManagerDashboard embedded={true} />}
               {currentUser.role === 'mentor' && <MentorDashboard embedded={true} />}
+              {currentUser.role === 'investor' && <InvestorDashboard embedded={true} />}
             </div>
           ) : (
             <>

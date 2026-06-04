@@ -122,6 +122,20 @@ export default function LoginPage() {
       return;
     }
 
+    // Find investor
+    const investor = db.getInvestors().find(i => i.email.toLowerCase() === email.toLowerCase());
+    if (investor) {
+      setActiveUser({
+        id: investor.id,
+        email: investor.email,
+        name: investor.name,
+        role: 'investor'
+      });
+      triggerSuccessConfetti();
+      redirectUser('investor');
+      return;
+    }
+
     setError('Account not found in RTIH Seeding Directory.');
   };
 
@@ -149,6 +163,14 @@ export default function LoginPage() {
         role: 'founder',
         startupId: item.startupId,
         companyName: startup ? startup.name : null
+      });
+    } else if (item.role === 'investor') {
+      const iObj = db.getInvestors().find(i => i.email.toLowerCase() === item.email.toLowerCase());
+      setActiveUser({
+        id: iObj ? iObj.id : 'investor-1',
+        email: item.email,
+        name: item.name,
+        role: 'investor'
       });
     } else {
       const mObj = db.getMentors().find(m => m.email.toLowerCase() === item.email.toLowerCase());
@@ -370,6 +392,27 @@ export default function LoginPage() {
           email: 'tirupati.mentor2@rtihmentor.in',
           pass: 'rtih2026',
           description: 'Advises on semiconductor design packaging, high-yield floriculture, and automated dairies.'
+        }
+      ]
+    },
+    {
+      group: 'Ecosystem Investors (Capital Linkage Partners)',
+      items: [
+        {
+          role: 'investor',
+          name: 'Suresh Naidu',
+          org: 'Amaravati Ventures (Managing Partner)',
+          email: 'suresh.naidu@amaravativentures.com',
+          pass: 'rtih2026',
+          description: 'Investigates early-stage startups for matching state grants and co-investment.'
+        },
+        {
+          role: 'investor',
+          name: 'Priya Reddy',
+          org: 'Rayalaseema Angels (Principal)',
+          email: 'priya.reddy@rayalaseemaangels.com',
+          pass: 'rtih2026',
+          description: 'Focuses on early-stage MedTech, AgriTech, and clean energy startups in AP.'
         }
       ]
     }

@@ -11,7 +11,8 @@ const ROLES = [
   { name: 'Founder Command Center', path: '/founder', icon: Award, color: 'text-emerald-500', minRole: 'founder' },
   { name: 'Mentor Command Center', path: '/mentor', icon: Sparkles, color: 'text-purple-500', minRole: 'mentor' },
   { name: 'Program Manager Center', path: '/manager', icon: Briefcase, color: 'text-orange-500', minRole: 'manager' },
-  { name: 'AP Admin Command Center', path: '/admin', icon: Shield, color: 'text-red-500', minRole: 'admin' }
+  { name: 'AP Admin Command Center', path: '/admin', icon: Shield, color: 'text-red-500', minRole: 'admin' },
+  { name: 'Investor Linkage Portal', path: '/investor', icon: Landmark, color: 'text-blue-600', minRole: 'investor' }
 ];
 
 interface Toast {
@@ -111,6 +112,7 @@ export default function Navigation() {
     else if (currentUser.role === 'founder') resolvedPath = '/founder';
     else if (currentUser.role === 'mentor') resolvedPath = '/mentor';
     else if (currentUser.role === 'manager') resolvedPath = '/manager';
+    else if (currentUser.role === 'investor') resolvedPath = '/investor';
   }
   const currentRole = ROLES.find(r => r.path === resolvedPath) || ROLES[0];
   const isPublicHome = !currentUser && pathname === '/';
@@ -164,6 +166,8 @@ export default function Navigation() {
     if (currentUser.role === 'founder') return role.minRole === 'founder';
     // Mentor can access mentor
     if (currentUser.role === 'mentor') return role.minRole === 'mentor';
+    // Investor can access investor
+    if (currentUser.role === 'investor') return role.minRole === 'investor';
     return false;
   });
 
